@@ -156,7 +156,7 @@ ctrl.rideFactura = (req, res) => {
     imgSrc = path.normalize(imgSrc);
     var contribuyenteEspecial = factura.infoFactura[0].contribuyenteEspecial
       ? "CONTRIBUYENTE ESPECIAL: " +
-        factura.infoFactura[0].contribuyenteEspecial[0]
+      factura.infoFactura[0].contribuyenteEspecial[0]
       : "";
     var placa = factura.infoFactura[0].placa
       ? factura.infoFactura[0].placa[0]
@@ -326,7 +326,7 @@ ctrl.rideFactura = (req, res) => {
     body += `<th>${params.RIDE.name.descripcion}</th>`;
     body += `<th>${params.RIDE.name.cantidad}</th>`;
     body += `<th>${params.RIDE.name.precioUnitario}</th>`;
-    if (detAdicional == 0) params.RIDE.optionalItems.detAdicional.names.forEach( (i) => (body += `<th>${i}</th>`));
+    if (detAdicional == 0) params.RIDE.optionalItems.detAdicional.names.forEach((i) => (body += `<th>${i}</th>`));
 
     //Parametrización del subsidio
     if (databaseInfo.subsidio.status) {
@@ -350,11 +350,11 @@ ctrl.rideFactura = (req, res) => {
             <td style="text-align: center; font-size: 0.7em">${i.codigoPrincipal[0]}</td>
       `;
       if (params.RIDE.optionalItems.codigoAuxiliar)
-      body += i.codigoAuxiliar ? `<td style="font-size: 0.7em">${i.codigoAuxiliar[0]}</td>` : `<td></td>`;
+        body += i.codigoAuxiliar ? `<td style="font-size: 0.7em">${i.codigoAuxiliar[0]}</td>` : `<td></td>`;
       body += `<td style="font-size: .8em">${i.descripcion[0]}</td>`;
       body += `<td style="text-align: center">${parseFloat(i.cantidad[0]).toFixed(2)}</td>`;
       if (detAdicional == 0)
-        for ( var j = 0; j < params.RIDE.optionalItems.detAdicional.names.length; j++ ) {
+        for (var j = 0; j < params.RIDE.optionalItems.detAdicional.names.length; j++) {
           if (i.detallesAdicionales)
             body += i.detallesAdicionales[0].detAdicional[j]
               ? `
@@ -415,7 +415,7 @@ ctrl.rideFactura = (req, res) => {
     if (detAdicional == 2) {
       if (factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales)
         body += '<tr ><td style="text-align: center; font-size: 0.7em" colspan="' + (7 + colspan) + '">' +
-        factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales[0].detAdicional[0]["$"].valor + "</td></tr>";
+          factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales[0].detAdicional[0]["$"].valor + "</td></tr>";
     }
 
     //Sacar totales
@@ -438,11 +438,11 @@ ctrl.rideFactura = (req, res) => {
         </td>
     `;
 
-    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map(i=>{
+    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map(i => {
       codigo = params.getItem(params.sri.codigoIVA, 'codigo', i.codigo, 'codigo')
-      codigoPorcentaje =  params.getItem(params.sri.codigoIVA, 'codigo', i.codigoPorcentaje, 'codigo')
-      console.log(i.codigo,i.codigoPorcentaje)
-      if(i.codigo == codigo && i.codigoPorcentaje == codigoPorcentaje){
+      codigoPorcentaje = params.getItem(params.sri.codigoIVA, 'codigo', i.codigoPorcentaje, 'codigo')
+      console.log(i.codigo, i.codigoPorcentaje)
+      if (i.codigo == codigo && i.codigoPorcentaje == codigoPorcentaje) {
         //iva = parseFloat(i.valor);
         subtotal12 = parseFloat(i.baseImponible);
         nombreImpuesto = params.getItem(params.sri.codigoIVA, 'codigo', codigoPorcentaje, 'porcentaje')
@@ -457,7 +457,7 @@ ctrl.rideFactura = (req, res) => {
           </td>
         </tr>
         <tr class="totalDetalle">
-          <td rowspan=${(8 + rowspan)} colspan="${(2 + colspan)}" font-size: 0.9em">
+          <td rowspan=${(factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length > 1 ? 11 : 8 + rowspan)} colspan="${(2 + colspan)}" font-size: 0.9em">
       `;
     })
 
@@ -477,7 +477,7 @@ ctrl.rideFactura = (req, res) => {
 
 
     if (detAdicional == 1)
-      if ( factura.infoAdicional && factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales)
+      if (factura.infoAdicional && factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales)
         factura.infoAdicional[0].campoAdicional.push({
           $: { nombre: "Descripcion" },
           _: factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales[0].detAdicional[0]["$"].valor,
@@ -521,9 +521,7 @@ ctrl.rideFactura = (req, res) => {
         `;
 
     body += `
-    
-    </td>
-
+      </td>
       <td colspan="3" style="background-color: #f5f5f5 ">SUBTOTAL 0%</td>
       <td>
           <span style="text-align:left">$</span>
@@ -572,13 +570,13 @@ ctrl.rideFactura = (req, res) => {
     </td>
     </tr>
     `;
-    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map(i=>{
+    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map(i => {
       codigo = params.getItem(params.sri.codigoIVA, 'codigo', i.codigo, 'codigo')
-      codigoPorcentaje =  params.getItem(params.sri.codigoIVA, 'codigo', i.codigoPorcentaje, 'codigo')
-      if(i.codigo == codigo && i.codigoPorcentaje == codigoPorcentaje){
+      codigoPorcentaje = params.getItem(params.sri.codigoIVA, 'codigo', i.codigoPorcentaje, 'codigo')
+      if (i.codigo == codigo && i.codigoPorcentaje == codigoPorcentaje) {
         iva = parseFloat(i.valor);
-       //subtotal12 = parseFloat(i.baseImponible);
-       nombreIVA = params.getItem(params.sri.codigoIVA, 'codigo', codigoPorcentaje, 'porcentaje')
+        //subtotal12 = parseFloat(i.baseImponible);
+        nombreIVA = params.getItem(params.sri.codigoIVA, 'codigo', codigoPorcentaje, 'porcentaje')
       }
       return body += `
         <tr class="totalDetalle">
@@ -590,7 +588,7 @@ ctrl.rideFactura = (req, res) => {
         </tr>
       `
     })
-    
+
     body += `
     <tr class="totalDetalle">
     <td colspan="3" style="background-color: #f5f5f5; font-weight:bold  ">TOTAL</td>
@@ -641,7 +639,7 @@ ctrl.rideFactura = (req, res) => {
     //Fin
 
     body += "</tr></table></center></div>";
-   //console.log(body)
+    console.log(body)
     var style =
       "<style>body {  font-family: Arial, Helvetica, sans-serif;} #pageContent{margin-top: 0.5em} #infoRide{text-align: center; width: 90%;}#infoRide img {width: " +
       databaseInfo.imgWidth +
@@ -660,7 +658,7 @@ ctrl.rideFactura = (req, res) => {
         setTimeout(() => {
           try {
             fs.unlinkSync(factura.infoTributaria[0].claveAcceso[0] + ".pdf");
-          } catch (err) {}
+          } catch (err) { }
         }, 30000);
         return res.send(factura.infoTributaria[0].claveAcceso[0] + ".pdf");
       }
@@ -861,7 +859,7 @@ ctrl.rideRetencion = (req, res) => {
             fs.unlinkSync(
               comprobanteRetencion.infoTributaria[0].claveAcceso[0] + ".pdf"
             );
-          } catch (err) {}
+          } catch (err) { }
         }, 30000);
         return res.send(
           comprobanteRetencion.infoTributaria[0].claveAcceso[0] + ".pdf"
@@ -984,7 +982,7 @@ ctrl.rideRetencion2 = (req, res) => {
         var docSustento = comprobanteRetencion.docsSustento[0].docSustento[0];
         var codDocSustento =
           typeof params.sri.codDocSustento[docSustento.codDocSustento[0]] ===
-          "undefined"
+            "undefined"
             ? "OTROS"
             : params.sri.codDocSustento[docSustento.codDocSustento[0]];
         body +=
@@ -1069,7 +1067,7 @@ ctrl.rideRetencion2 = (req, res) => {
             fs.unlinkSync(
               comprobanteRetencion.infoTributaria[0].claveAcceso[0] + ".pdf"
             );
-          } catch (err) {}
+          } catch (err) { }
         }, 30000);
         return res.send(
           comprobanteRetencion.infoTributaria[0].claveAcceso[0] + ".pdf"
@@ -1186,7 +1184,7 @@ ctrl.rideCredito = (req, res) => {
       "</td></tr>" +
       '<tr style="border-top= 1px black solid"><td style="font-weight: bold">Comprobante que se modifica: </td><td>' +
       params.sri.codDocSustento[
-        notaCredito.infoNotaCredito[0].codDocModificado[0]
+      notaCredito.infoNotaCredito[0].codDocModificado[0]
       ] +
       " | " +
       notaCredito.infoNotaCredito[0].numDocModificado[0] +
@@ -1375,7 +1373,7 @@ ctrl.rideDebito = (req, res) => {
       "</td></tr>" +
       '<tr style="border-top= 1px black solid"><td style="font-weight: bold">Comprobante que se modifica: </td><td>' +
       params.sri.codDocSustento[
-        notaDebito.infoNotaDebito[0].codDocModificado[0]
+      notaDebito.infoNotaDebito[0].codDocModificado[0]
       ] +
       " | " +
       notaDebito.infoNotaDebito[0].numDocModificado[0] +
@@ -1451,7 +1449,7 @@ ctrl.rideDebito = (req, res) => {
         setTimeout(() => {
           try {
             fs.unlinkSync(notaDebito.infoTributaria[0].claveAcceso[0] + ".pdf");
-          } catch (err) {}
+          } catch (err) { }
         }, 30000);
         return res.send(notaDebito.infoTributaria[0].claveAcceso[0] + ".pdf");
       }
@@ -1801,8 +1799,8 @@ ctrl.rideLiquidacion = (req, res) => {
           if (i.detallesAdicionales)
             body += i.detallesAdicionales[0].detAdicional[j]
               ? '<td style="font-size: .8em">' +
-                i.detallesAdicionales[0].detAdicional[j]["$"].valor +
-                "</td>"
+              i.detallesAdicionales[0].detAdicional[j]["$"].valor +
+              "</td>"
               : "<td></td>";
           else body += "<td></td>";
         }
@@ -1966,7 +1964,7 @@ ctrl.rideLiquidacion = (req, res) => {
             fs.unlinkSync(
               liquidacionCompra.infoTributaria[0].claveAcceso[0] + ".pdf"
             );
-          } catch (err) {}
+          } catch (err) { }
         }, 30000);
         return res.send(
           liquidacionCompra.infoTributaria[0].claveAcceso[0] + ".pdf"
