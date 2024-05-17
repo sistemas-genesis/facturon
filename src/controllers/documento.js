@@ -291,24 +291,16 @@ ctrl.rideFactura = (req, res) => {
       <td style="font-weight: bold">Fecha:</td>
       <td>${factura.infoFactura[0].fechaEmision[0]}</td>
     </tr>
+    <tr>
+      <td colspan="4">
+        <span style="font-weight: bold">Dirección: </span>${direccionComprador != '' ? direccionComprador : ''}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="4"><span style="font-weight: bold">Placa: </span>${placa != '' ? placa : ''}</td>
+    </tr>    
   </table>
   `;
-
-    if (direccionComprador != "")
-      body += `
-              <tr>
-                <td colspan="4">
-                  <span style="font-weight: bold">Dirección: </span>${direccionComprador}
-                </td>
-              </tr>
-              `
-
-    if (placa != "")
-      body += `
-              <tr>
-                <td colspan="4"><span style="font-weight: bold">Placa: </span>${placa}</td>
-              </tr>    
-              `;
 
     body += `
     </table>
@@ -431,18 +423,17 @@ ctrl.rideFactura = (req, res) => {
     body += `
       <tr class="totalDetalle">
         <td
-          rowspan="${factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length}"
+        rowspan="${factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length}"
           colspan="${(2 + colspan)}"
           style="color: #0d47a1; font-size: 0.9em; color: #0d47a1"
         >
           Información Adicional
         </td>
     `;
-    
-    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map((i,index)=> {
+
+    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map((i, index) => {
       codigo = params.getItem(params.sri.codigoIVA, 'codigo', i.codigo, 'codigo')
       codigoPorcentaje = params.getItem(params.sri.codigoIVA, 'codigo', i.codigoPorcentaje, 'codigo')
-      console.log(i.codigo, i.codigoPorcentaje)
       if (i.codigo == codigo && i.codigoPorcentaje == codigoPorcentaje) {
         //iva = parseFloat(i.valor);
         subtotal12 = parseFloat(i.baseImponible);
@@ -460,7 +451,7 @@ ctrl.rideFactura = (req, res) => {
         <tr class="totalDetalle">
       `;
       // if(index>0) body+= `<td colspan="${(2 + colspan)}" style="font-size: 0.9em">`
-      if(index==factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length-1) body+= `<td rowspan=${(factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length > 1 ? 11 : 8 + rowspan)} colspan="${(2 + colspan)}" style="font-size: 0.9em">`
+      if (index == factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length - 1) body += `<td rowspan=${(factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length > 1 ? 9 : 8 + rowspan)} colspan="${(2 + colspan)}" style="font-size: 0.9em">`
       return body
     })
 
@@ -642,7 +633,7 @@ ctrl.rideFactura = (req, res) => {
     //Fin
 
     body += "</tr></table></center></div>";
-    
+
     var style =
       "<style>body {  font-family: Arial, Helvetica, sans-serif;} #pageContent{margin-top: 0.5em} #infoRide{text-align: center; width: 90%;}#infoRide img {width: " +
       databaseInfo.imgWidth +

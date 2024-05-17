@@ -2,15 +2,15 @@
   databases: [
     {
       user: 'dba',
-      pass: 'proyecto2022',
+      pass: 'proyecto2014',
       port: '49153',
-      db: 'lino_test',
+      db: 'isaba_test',
       host: 'localhost',
-      ruc: '1307231686001',
+      ruc: '1391730403001',
       img: 'logo_ce.jpg',
       imgWidth: '50%',
       imgHeight: 'auto',
-      nombreComercial: 'LINO',
+      nombreComercial: 'ISABA',
       mail: {
         host: 'mail.ingjavierzambrano.com',
         port: 25,
