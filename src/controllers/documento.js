@@ -197,7 +197,7 @@ ctrl.rideFactura = (req, res) => {
     </tr>
   </table>
   
-  <table id="infoEmpresa" cellspacing="0">
+  <table id="infoEmpresa" cellspacing="0" style="margin: auto" >
     <tr>
       <td
         colspan="2"
@@ -278,7 +278,7 @@ ctrl.rideFactura = (req, res) => {
     </tr>
   </table>
   
-  <table id="infoCliente">
+  <table id="infoCliente" style="margin: auto">
     <tr>
       <td colspan="4">
         <span style="font-weight: bold">Razón Social / Nombres y Apellidos:</span>
@@ -312,7 +312,7 @@ ctrl.rideFactura = (req, res) => {
 
     body += `
     </table>
-      <table id="detalle" style="margin-top: 1em">
+      <table id="detalle" style="margin-top: 1em;margin: auto" >
           <tr style="font-size: 0.9em; background-color: #0d47a1;  color: white">
               <th style="padding: 0.7em">
                   ${params.RIDE.name.codigoPrincipal}
@@ -431,14 +431,15 @@ ctrl.rideFactura = (req, res) => {
     body += `
       <tr class="totalDetalle">
         <td
+          rowspan="${factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length}"
           colspan="${(2 + colspan)}"
           style="color: #0d47a1; font-size: 0.9em; color: #0d47a1"
         >
           Información Adicional
         </td>
     `;
-
-    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map(i => {
+    
+    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map((i,index)=> {
       codigo = params.getItem(params.sri.codigoIVA, 'codigo', i.codigo, 'codigo')
       codigoPorcentaje = params.getItem(params.sri.codigoIVA, 'codigo', i.codigoPorcentaje, 'codigo')
       console.log(i.codigo, i.codigoPorcentaje)
@@ -447,7 +448,7 @@ ctrl.rideFactura = (req, res) => {
         subtotal12 = parseFloat(i.baseImponible);
         nombreImpuesto = params.getItem(params.sri.codigoIVA, 'codigo', codigoPorcentaje, 'porcentaje')
       }
-      return body += `
+      body += `
           <td colspan="3" style="background-color: #f5f5f5">SUBTOTAL ${nombreImpuesto}%</td>
           <td>
             <span style="text-align: left">$</span>
@@ -457,8 +458,10 @@ ctrl.rideFactura = (req, res) => {
           </td>
         </tr>
         <tr class="totalDetalle">
-          <td rowspan=${(factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length > 1 ? 11 : 8 + rowspan)} colspan="${(2 + colspan)}" font-size: 0.9em">
       `;
+      // if(index>0) body+= `<td colspan="${(2 + colspan)}" style="font-size: 0.9em">`
+      if(index==factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length-1) body+= `<td rowspan=${(factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length > 1 ? 11 : 8 + rowspan)} colspan="${(2 + colspan)}" style="font-size: 0.9em">`
+      return body
     })
 
     /*factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.forEach((i) => {
@@ -639,7 +642,7 @@ ctrl.rideFactura = (req, res) => {
     //Fin
 
     body += "</tr></table></center></div>";
-    console.log(body)
+    
     var style =
       "<style>body {  font-family: Arial, Helvetica, sans-serif;} #pageContent{margin-top: 0.5em} #infoRide{text-align: center; width: 90%;}#infoRide img {width: " +
       databaseInfo.imgWidth +
