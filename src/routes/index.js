@@ -13,6 +13,7 @@ module.exports = app => {
 	router.post('/api/documento/ride/remision/:fechaAutorizacion', controladores.documento.rideRemision);
 	router.post('/api/documento/ride/liquidacion/:fechaAutorizacion', controladores.documento.rideLiquidacion);
 	router.post('/api/documento/ride/retencion2/:fechaAutorizacion', controladores.documento.rideRetencion2);
+	router.get('/api/getXmlById/:db/:id', controladores.documento.getXmlById);
 
 	router.post('/api/documento/:cedula_ruc&:start&:end&:db', controladores.documento.get);
 	router.post('/api/documentoLike/:start&:end&:db', controladores.documento.getLike);

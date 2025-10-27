@@ -13,61 +13,35 @@ const utilities = require("../libs/utilities");
 
 var ctrl = {};
 ctrl.get = (req, res) => {
-  const fecha = req.body.params.fecha_autorizacion
-    ? "fecha_autorizacion"
-    : "fecha_comprobante";
+  const fecha = req.body.params.fecha_autorizacion ? 'fecha_autorizacion' : 'fecha_comprobante';
   const connection = utilities.dbConnection(req.params.db);
-  var query =
-    "SELECT ce_id,ce_xml,ruc_emisor,ruc_comprador,nombre_comprador=web_clear_special(nombre_comprador),fecha_comprobante,numero_comprobante,clave_acceso,numero_autorizacion,fecha_autorizacion,tipo_comprobante,xml_autorizado " +
-    "FROM ce_comprobante " +
-    "where(ruc_comprador = '" +
-    req.params.cedula_ruc +
-    "' or ruc_comprador = SUBSTR('" +
-    req.params.cedula_ruc +
-    "',0,11) or ruc_comprador = '" +
-    req.params.cedula_ruc +
-    "'+'001') " +
-    "and estado = 4 " +
-    "and DATE(" +
-    fecha +
-    ") >= '" +
-    req.params.start +
-    "' and DATE(" +
-    fecha +
-    ") <= '" +
-    req.params.end +
-    "' " +
-    "and ruc_comprador <> '9999999999999' and '" +
-    req.body.empresas +
-    "' like '%'+ruc_emisor+'%' " +
-    "and ('" +
-    req.body.estacion +
-    "' LIKE '%'+SUBSTR(numero_comprobante, 0,4)+'%' OR ',' = '" +
-    req.body.estacion +
-    "') " +
-    "and ('" +
-    req.body.punto +
-    "' LIKE '%'+SUBSTR(numero_comprobante, 5,3)+'%' OR ','= '" +
-    req.body.punto +
-    "') " +
-    "and '" +
-    req.body.tipos +
-    "' like '%,'+tipo_comprobante+',%'";
-  let db = new Sybase(
-    connection.host,
-    connection.port,
-    connection.db,
-    connection.user,
-    connection.pass
-  );
-  db.connect((err) => {
+  let query = ""
+    + "SELECT ce_id, ruc_emisor, ruc_comprador, "
+    + "       nombre_comprador = web_clear_special(nombre_comprador), "
+    + "       fecha_comprobante, numero_comprobante, clave_acceso, "
+    + "       numero_autorizacion, fecha_autorizacion, tipo_comprobante "
+    + "FROM ce_comprobante "
+    + "WHERE (ruc_comprador = '" + req.params.cedula_ruc + "' "
+    + "   OR ruc_comprador = SUBSTR('" + req.params.cedula_ruc + "',0,11) "
+    + "   OR ruc_comprador = '" + req.params.cedula_ruc + "' + '001') "
+    + "  AND estado = 4 "
+    + "  AND DATE(" + fecha + ") >= '" + req.params.start + "' "
+    + "  AND DATE(" + fecha + ") <= '" + req.params.end + "' "
+    + "  AND ruc_comprador <> '9999999999999' "
+    + "  AND '" + req.body.empresas + "' LIKE '%'+ruc_emisor+'%' "
+    + "  AND ('" + req.body.estacion + "' LIKE '%'+SUBSTR(numero_comprobante, 0,4)+'%' OR ',' = '" + req.body.estacion + "') "
+    + "  AND ('" + req.body.punto + "' LIKE '%'+SUBSTR(numero_comprobante, 5,3)+'%' OR ','= '" + req.body.punto + "') "
+    + "  AND '" + req.body.tipos + "' LIKE '%,'+tipo_comprobante+',%'";
+  const db = new Sybase(connection.host, connection.port, connection.db, connection.user, connection.pass);
+  db.connect(err => {
     if (err) console.log(err);
     db.query(query, async (err, data) => {
       if (err) console.log(err);
-      await utilities.asyncForEach(data, async (i) => {
-        var xml = await utilities.asyncParseString(i.ce_xml);
-        i.val = utilities.getValorFromXml(xml);
-      });
+      // YA NO SE TIENE QUE RECORRER LOS XML PORQUE NO SE USAN AL MENOS QUE SEA NECESARIO
+      // await utilities.asyncForEach(data, async (i) => {
+      //   var xml = await utilities.asyncParseString(i.ce_xml);
+      //   i.val = utilities.getValorFromXml(xml);
+      // });
       res.json(data);
       db.disconnect();
     });
@@ -76,54 +50,54 @@ ctrl.get = (req, res) => {
 
 ctrl.getLike = (req, res) => {
   const fecha = req.body.params.fecha_autorizacion
-    ? "fecha_autorizacion"
-    : "fecha_comprobante";
+    ? 'fecha_autorizacion' : 'fecha_comprobante';
   const connection = utilities.dbConnection(req.params.db);
-  var query =
-    "SELECT ce_id,ce_xml,ruc_emisor,ruc_comprador,nombre_comprador=web_clear_special(nombre_comprador),fecha_comprobante,numero_comprobante,clave_acceso,numero_autorizacion,fecha_autorizacion,tipo_comprobante,xml_autorizado " +
+  const query =
+    "SELECT ce_id, " +
+    " ruc_emisor,ruc_comprador, " +
+    " nombre_comprador = web_clear_special(nombre_comprador), " +
+    " fecha_comprobante, numero_comprobante,clave_acceso, " +
+    " numero_autorizacion,fecha_autorizacion,tipo_comprobante " +
     "FROM ce_comprobante " +
-    "WHERE DATE(" +
-    fecha +
-    ") >= '" +
-    req.params.start +
-    "' and DATE(" +
-    fecha +
-    ") <= '" +
-    req.params.end +
-    "' " +
-    "and '" +
-    req.body.empresas +
-    "' like '%'+ruc_emisor+'%' " +
-    "and ('" +
-    req.body.estacion +
-    "' LIKE '%'+SUBSTR(numero_comprobante, 0,4)+'%' OR ',' = '" +
-    req.body.estacion +
-    "') " +
-    "and ('" +
-    req.body.punto +
-    "' LIKE '%'+SUBSTR(numero_comprobante, 5,3)+'%' OR ','= '" +
-    req.body.punto +
-    "') " +
-    "and '" +
-    req.body.tipos +
-    "' like '%,'+tipo_comprobante+',%'";
-  let db = new Sybase(
-    connection.host,
-    connection.port,
-    connection.db,
-    connection.user,
-    connection.pass
-  );
-  db.connect((err) => {
+    "WHERE DATE(" + fecha + ") >= '" + req.params.start + "' " +
+    " AND DATE(" + fecha + ") <= '" + req.params.end + "' " +
+    " AND '" + req.body.empresas + "' LIKE '%'+ruc_emisor+'%' " +
+    " AND ('" + req.body.estacion + "' LIKE '%'+SUBSTR(numero_comprobante, 0,4)+'%' OR ',' = '" + req.body.estacion + "') " +
+    " AND ('" + req.body.punto + "' LIKE '%'+SUBSTR(numero_comprobante, 5,3)+'%' OR ',' = '" + req.body.punto + "') " +
+    " AND '" + req.body.tipos + "' LIKE '%,'+tipo_comprobante+',%'";
+  const db = new Sybase(connection.host, connection.port, connection.db, connection.user, connection.pass);
+  db.connect(err  => {
     if (err) console.log(err);
     db.query(query, async (err, data) => {
       if (err) console.log(err);
-      await utilities.asyncForEach(data, async (i) => {
-        var xml = await utilities.asyncParseString(i.ce_xml);
-        i.val = utilities.getValorFromXml(xml);
-      });
+      // YA NO SE TIENE QUE RECORRER LOS XML PORQUE NO SE USAN AL MENOS QUE SEA NECESARIO
+      // await utilities.asyncForEach(data, async (i) => {
+      //   var xml = await utilities.asyncParseString(i.ce_xml);
+      //   i.val = utilities.getValorFromXml(xml);
+      // });
       res.json(data);
       db.disconnect();
+    });
+  });
+};
+
+ctrl.getXmlById = (req, res) => {
+  const connection = utilities.dbConnection(req.params.db);
+  const { id } = req.params;
+
+  const q = "SELECT TOP 1 ce_xml FROM ce_comprobante WHERE ce_id = " + id;
+  const db = new Sybase(connection.host, connection.port, connection.db, connection.user, connection.pass);
+  db.connect(err => {
+    if (err) return res.status(500).json({ success:false, msg: err.message });
+
+    db.query(q, (err, rows) => {
+      db.disconnect();
+      if (err) return res.status(500).json({ success:false, msg: err.message });
+      if (!rows || !rows[0] || !rows[0].ce_xml) {
+        return res.status(404).json({ success:false, msg:'XML no disponible' });
+      }
+      res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+      return res.send(rows[0].ce_xml);
     });
   });
 };
@@ -140,9 +114,9 @@ ctrl.rideFactura = (req, res) => {
       ? factura.infoFactura[0].direccionComprador[0]
       : "";
     var imgSrc =
-      "file://" +
-      __dirname +
-      "../../public/img/" +
+      // "file://" +
+      // __dirname +
+      // "../../public/img/" +
       utilities.getLogoByRuc(
         factura.infoTributaria[0].ruc[0],
         factura.infoTributaria[0].estab[0],
@@ -153,7 +127,14 @@ ctrl.rideFactura = (req, res) => {
       factura.infoTributaria[0].estab[0],
       factura.infoTributaria[0].ptoEmi[0]
     );
-    imgSrc = path.normalize(imgSrc);
+    // imgSrc = path.normalize(imgSrc);
+    if (imgSrc) {
+      const logoPath = imgSrc;
+      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+    } else {
+      console.log("No se encuentra logo");
+	  }
     var contribuyenteEspecial = factura.infoFactura[0].contribuyenteEspecial
       ? "CONTRIBUYENTE ESPECIAL: " +
       factura.infoFactura[0].contribuyenteEspecial[0]
@@ -676,15 +657,22 @@ ctrl.rideRetencion = (req, res) => {
     if (!comprobanteRetencion.infoCompRetencion[0].direccionSujetoRetenido)
       comprobanteRetencion.infoCompRetencion[0].direccionSujetoRetenido = [""];
     var imgSrc =
-      "file://" +
-      __dirname +
-      "../../public/img/" +
+      // "file://" +
+      // __dirname +
+      // "../../public/img/" +
       utilities.getLogoByRuc(
         comprobanteRetencion.infoTributaria[0].ruc[0],
         comprobanteRetencion.infoTributaria[0].estab[0],
         comprobanteRetencion.infoTributaria[0].ptoEmi[0]
       );
-    imgSrc = path.normalize(imgSrc);
+    // imgSrc = path.normalize(imgSrc);
+    if (imgSrc) {
+      const logoPath = imgSrc;
+      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+    } else {
+      console.log("No se encuentra logo");
+	  }
     //Generación de barcode clave de acceso
     let barcode = await utilities.getBarcode(
       comprobanteRetencion.infoTributaria[0].claveAcceso[0]
@@ -878,15 +866,22 @@ ctrl.rideRetencion2 = (req, res) => {
     if (!comprobanteRetencion.infoCompRetencion[0].direccionSujetoRetenido)
       comprobanteRetencion.infoCompRetencion[0].direccionSujetoRetenido = [""];
     var imgSrc =
-      "file://" +
-      __dirname +
-      "../../public/img/" +
+      // "file://" +
+      // __dirname +
+      // "../../public/img/" +
       utilities.getLogoByRuc(
         comprobanteRetencion.infoTributaria[0].ruc[0],
         comprobanteRetencion.infoTributaria[0].estab[0],
         comprobanteRetencion.infoTributaria[0].ptoEmi[0]
       );
-    imgSrc = path.normalize(imgSrc);
+    // imgSrc = path.normalize(imgSrc);
+    if (imgSrc) {
+      const logoPath = imgSrc;
+      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+    } else {
+      console.log("No se encuentra logo");
+	  }
     //Generación de barcode clave de acceso
     let barcode = await utilities.getBarcode(
       comprobanteRetencion.infoTributaria[0].claveAcceso[0]
@@ -1084,15 +1079,22 @@ ctrl.rideCredito = (req, res) => {
     if (!notaCredito.infoNotaCredito[0].direccionComprador)
       notaCredito.infoNotaCredito[0].direccionComprador = [""];
     var imgSrc =
-      "file://" +
-      __dirname +
-      "../../public/img/" +
+      // "file://" +
+      // __dirname +
+      // "../../public/img/" +
       utilities.getLogoByRuc(
         notaCredito.infoTributaria[0].ruc[0],
         notaCredito.infoTributaria[0].estab[0],
         notaCredito.infoTributaria[0].ptoEmi[0]
       );
-    imgSrc = path.normalize(imgSrc);
+    // imgSrc = path.normalize(imgSrc);
+    if (imgSrc) {
+      const logoPath = imgSrc;
+      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+    } else {
+      console.log("No se encuentra logo");
+	  }
     var contribuyenteEspecial = notaCredito.infoNotaCredito[0]
       .contribuyenteEspecial
       ? notaCredito.infoNotaCredito[0].contribuyenteEspecial[0]
@@ -1291,12 +1293,18 @@ ctrl.rideDebito = (req, res) => {
     if (!notaDebito.infoNotaDebito[0].direccionComprador)
       notaDebito.infoNotaDebito[0].direccionComprador = [""];
     var imgSrc =
-      "file://" +
-      __dirname +
-      "../../public/img/" +
+      // "file://" +
+      // __dirname +
+      // "../../public/img/" +
       utilities.getLogoByRuc(notaDebito.infoTributaria[0].ruc[0]);
-    imgSrc = path.normalize(imgSrc);
-
+    // imgSrc = path.normalize(imgSrc);
+    if (imgSrc) {
+      const logoPath = imgSrc;
+      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+    } else {
+      console.log("No se encuentra logo");
+	  }
     var canvas = Canvas.createCanvas();
     JsBarcode(canvas, notaDebito.infoTributaria[0].claveAcceso[0], {
       width: 4,
@@ -1466,15 +1474,22 @@ ctrl.rideRemision = (req, res) => {
       guiaRemision.infoGuiaRemision[0].direccionComprador = [""];
 
     var imgSrc =
-      "file://" +
-      __dirname +
-      "../../public/img/" +
+      // "file://" +
+      // __dirname +
+      // "../../public/img/" +
       utilities.getLogoByRuc(
         guiaRemision.infoTributaria[0].ruc[0],
         guiaRemision.infoTributaria[0].estab[0],
         guiaRemision.infoTributaria[0].ptoEmi[0]
       );
-    imgSrc = path.normalize(imgSrc);
+    // imgSrc = path.normalize(imgSrc);
+    if (imgSrc) {
+      const logoPath = imgSrc;
+      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+    } else {
+      console.log("No se encuentra logo");
+	  }
     let barcode = await utilities.getBarcode(
       guiaRemision.infoTributaria[0].claveAcceso[0]
     );
@@ -1667,16 +1682,22 @@ ctrl.rideLiquidacion = (req, res) => {
       ? liquidacionCompra.infoLiquidacionCompra[0].direccionProveedor[0]
       : "";
     var imgSrc =
-      "file://" +
-      __dirname +
-      "../../public/img/" +
+      // "file://" +
+      // __dirname +
+      // "../../public/img/" +
       utilities.getLogoByRuc(
         liquidacionCompra.infoTributaria[0].ruc[0],
         liquidacionCompra.infoTributaria[0].estab[0],
         liquidacionCompra.infoTributaria[0].ptoEmi[0]
       );
-    imgSrc = path.normalize(imgSrc);
-
+    // imgSrc = path.normalize(imgSrc);
+    if (imgSrc) {
+      const logoPath = imgSrc;
+      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+    } else {
+      console.log("No se encuentra logo");
+	  }
     //Parametrización de la leyenda del catastro
     var leyenda_catastro = utilities.getLeyendaCatastro(liquidacionCompra);
     //Fin

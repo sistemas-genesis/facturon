@@ -215,52 +215,66 @@ app.controller('main', ($scope, $http,  $window) =>
         })
 	}
 
-	$scope.downloadXML = i => {
-		var xml = $scope.data[i].xml_autorizado;
+	$scope.downloadXML = async (idx) => {
+		const row = $scope.data[idx];
+		if (!row || !row.ce_id) { Materialize.toast('No hay ce_id', 1500, 'red'); return; }
+		const db = row.origin;
 
-		var pom = document.createElement('a');
-		var filename = $scope.data[i].clave_acceso+".xml";
-		var bb = new Blob([xml], {type: 'text/plain'});
-		pom.setAttribute('href', window.URL.createObjectURL(bb));
-		pom.setAttribute('download', filename);
-		pom.dataset.downloadurl = ['text/plain', pom.download, pom.href].join(':');
-		pom.draggable = true; 
-		pom.classList.add('dragout');
-		pom.click();
-	}
+		const url = `/api/getXmlById/${encodeURIComponent(db)}/${encodeURIComponent(row.ce_id)}`;
+		fetch(url).then(async r => {
+			if (!r.ok) return Herramientas.Notificar('XML no disponible');
+			const txt = await r.text();
+			const blob = new Blob([txt], { type: 'application/xml;charset=utf-8' });
+			const a = document.createElement('a');
+			a.href = URL.createObjectURL(blob);
+			a.download = `${row.numero_comprobante}.xml`;
+			a.click();
+			URL.revokeObjectURL(a.href);
+		});
+	};
 
-	$scope.downloadPDF = i => {
-		var xml = $scope.data[i].ce_xml;
-        switch($scope.data[i].tipo_comprobante){
-        	case 'FV': tipo = 'factura'; break;
-        	case 'CR': tipo = 'retencion'; break;
-        	case 'NC': tipo = 'credito'; break;
-        	case 'ND': tipo = 'debito'; break;
-        	case 'GR': tipo = 'remision'; break;
-        	case 'LC': tipo = 'liquidacion'; break;
-        }
+	$scope.downloadPDF = async (idx) => {
+		try {
+			const row = $scope.data[idx];
+			if (!row || !row.ce_id) { Materialize.toast('No hay ce_id', 1500, 'red'); return; }
 
-        var xml = $scope.data[i].ce_xml;
-		xml = xml.replace(/\0/g, '')
-		var parser = new DOMParser();
-        var xmlDoc = parser.parseFromString(xml,"text/xml");
-        var json = xmlToJson(xmlDoc)
-		
-		if (tipo == 'retencion')
-			if (parseFloat(json.comprobanteRetencion['@attributes'].version) >= 2)
-				tipo = 'retencion2'		
+			const db = row.origin;
 
-		$http.post('api/documento/ride/'+tipo+'/'+$scope.data[i].fecha_autorizacion, {xml})
-		.success(res => {
-			setTimeout(()=>{
-				window.open(escape('/api/pdf/'+res));
-			},1000)
-	        
-		})
-		.error(err => {
-			Materialize.toast('Error de conexión', 1000, 'red')
-		})
-	}
+			const resXml = await fetch(`/api/getXmlById/${encodeURIComponent(db)}/${encodeURIComponent(row.ce_id)}`);
+			if (!resXml.ok) { Materialize.toast('XML no disponible', 1500, 'orange'); return; }
+			var xml = await resXml.text();
+
+			let tipo = '';
+			switch (row.tipo_comprobante) {
+			case 'FV': tipo = 'factura'; break;
+			case 'CR': tipo = 'retencion'; break;
+			case 'NC': tipo = 'credito'; break;
+			case 'ND': tipo = 'debito'; break;
+			case 'GR': tipo = 'remision'; break;
+			case 'LC': tipo = 'liquidacion'; break;
+			default:
+				Materialize.toast('Tipo de comprobante no soportado', 1500, 'red');
+				return;
+			}
+			xml = xml.replace(/\0/g, '')
+			var parser = new DOMParser();
+			var xmlDoc = parser.parseFromString(xml,"text/xml");
+			var json = xmlToJson(xmlDoc)
+			if (tipo == 'retencion') {
+				if (parseFloat(json.comprobanteRetencion['@attributes'].version) >= 2)
+					tipo = 'retencion2';
+			}
+			const fechaAut = row.fecha_autorizacion || '';
+			const resRide = await $http.post(`/api/documento/ride/${tipo}/${fechaAut}`, { xml });
+
+			const fileName = (resRide && resRide.data) ? resRide.data : resRide; 
+			if (!fileName) { Materialize.toast('No se obtuvo el PDF', 1500, 'orange'); return; }
+			window.open(escape(`/api/pdf/${fileName}`), '_blank');
+		} catch (err) {
+			console.error(err);
+			Materialize.toast('Error al generar el PDF', 1500, 'red');
+		}
+	};
 
 	$scope.mail = () => {
 		var i = $scope.datum.current;

@@ -83,23 +83,24 @@ ctrl.dbConnection = db => {
 
 ctrl.getValorFromXml = (json) => {
 	var res = 0;
+	if (json && typeof json === 'object' && Object.keys(json).length > 0) {
 	switch(Object.keys(json)[0]){
 		case 'factura': 
-			res = json.factura.infoFactura[0].importeTotal[0]; 
+			res = json.factura?.infoFactura[0]?.importeTotal[0]; 
 			break;
 		case 'comprobanteRetencion':
 			if ( parseFloat(json.comprobanteRetencion['$'].version) >= 2)
-				json.comprobanteRetencion.docsSustento[0].docSustento[0].retenciones[0].retencion.forEach(i=>{
+				json.comprobanteRetencion?.docsSustento[0]?.docSustento[0]?.retenciones[0].retencion.forEach(i=>{
 	        		res+=parseFloat(i.valorRetenido[0])
 	      		})
 			else
-	      		json.comprobanteRetencion.impuestos[0].impuesto.forEach(i=>{
+	      		json.comprobanteRetencion?.impuestos[0]?.impuesto.forEach(i=>{
 	        		res+=parseFloat(i.valorRetenido[0])
 	      		})
       		res = res.toFixed(2); 
       		break;
 		case 'notaCredito': 
-			res = json.notaCredito.infoNotaCredito[0].totalSinImpuestos[0];
+			res = json.notaCredito?.infoNotaCredito[0]?.totalSinImpuestos[0];
 			break;
 		case 'notaDebito': 
 			res = json.notaDebito.infoNotaDebito.totalSinImpuestos[0];
@@ -111,7 +112,8 @@ ctrl.getValorFromXml = (json) => {
 			res = '';
 			break;
 	}
-	return res;	
+	}
+	return res;
 }
 
 ctrl.getMailFromXml = json => {
@@ -273,16 +275,26 @@ ctrl.isset = (obj, key) => {
         return (typeof obj !== 'undefined' && obj != '' && obj && obj !== null && typeof obj[key] !== 'undefined' && obj[key] != '' && obj[key] !== null) || false
 }
 
-ctrl.asyncParseString = async xml =>{
-    return new Promise((resolve, reject) => {
-        parseString(xml, function (err, json) {
-            if (err)
-                reject(err);
-            else
-                resolve(json);
-        });
+ctrl.asyncParseString = async (xml) => {
+  return new Promise((resolve) => {
+    try {
+      xml = xml.trim();
+      xml = xml.replace(/<\s*\?\s*x\s*m\s*l[^>]*\?>/, '<?xml version="1.0" encoding="UTF-8"?>');
+      xml = xml.replace(/\s+(?=<)/g, '');
 
-    });
+      if (!xml.startsWith('<')) {
+        return resolve(null); 
+      }
+
+      parseString(xml, { explicitArray: false, trim: true }, (err, result) => {
+        if (err) return resolve(null); 
+        resolve(result);
+      });
+
+    } catch (e) {
+      resolve(null); 
+    }
+  });
 }
 
 ctrl.asyncForEach = async (array, callback) => {

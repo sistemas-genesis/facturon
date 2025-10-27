@@ -2,15 +2,16 @@
   databases: [
     {
       user: 'dba',
-      pass: 'proyecto2014',
-      port: '49153',
-      db: 'isaba_test',
+      pass: 'Genesis@2023.',
+      port: '4011',
+      db: 'pita_nova',
       host: 'localhost',
-      ruc: '1391730403001',
-      img: 'logo_ce.jpg',
+      ruc: '1490826722001',
+      // LAS IMAGENES CON ESTA RUTA POR ERROR NO LAS CARGA EL RIDE
+      img: 'C:\\PROGRAM1\\facturonGenesis\\src\\public\\img\\logo_ce.jpg',
       imgWidth: '50%',
       imgHeight: 'auto',
-      nombreComercial: 'ISABA',
+      nombreComercial: 'PITANOVA S.A.',
       mail: {
         host: 'mail.ingjavierzambrano.com',
         port: 25,
@@ -52,7 +53,7 @@
     },
 
   ],
-  port: 8082,
+  port: 3081,
   soap: 'https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl',
   genesisIp: 'http://181.198.196.143:2001/',
   tables: {
