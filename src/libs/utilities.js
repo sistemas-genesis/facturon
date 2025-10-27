@@ -219,6 +219,21 @@ ctrl.getLogoByRuc = (ruc, estacion, punto) => {
 	if (index) return params.databases[index].img;
 }
 
+ctrl.getPhoneIdRuc = (ruc, estacion, punto) => {
+	var index = false;
+	for (var i = 0; i < params.databases.length; i++) {
+		if (params.databases[i].ruc == ruc){
+			index = i;
+			if(params.databases[i].estacion == '' || params.databases[i].estacion == estacion){
+				index = i;
+				if(params.databases[i].punto == '' || params.databases[i].punto == punto)
+					return params.databases[i].phoneNumerId;
+			}
+		}
+	}
+	if (index) return params.databases[index].phoneNumerId;
+}
+
 ctrl.lastOrNoDetAdicional = json => {
 	var last = false;
 	var count = 0;

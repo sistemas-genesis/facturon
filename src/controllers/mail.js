@@ -150,7 +150,7 @@ ctrl.mail = (req = express.request, res) => {
     }
     // Envaindo al whtsaap
     console.log("Enviando al whatsapp");
-    const phoneNumerId = params.phoneNumerId;
+    let phoneNumerId = utilities.getPhoneIdRuc(result[tipo_comprobante].infoTributaria[0].ruc);
     if (phoneNumerId) {
       try {
         await WhatsAppGenesis.generateToken(phoneNumerId);
