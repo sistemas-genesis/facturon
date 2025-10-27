@@ -54,6 +54,7 @@
 
   ],
   port: 3081,
+  phoneNumerId: 'ffd8120f-ae59-451b-8f55-606106e8b934',
   soap: 'https://cel.sri.gob.ec/comprobantes-electronicos-ws/AutorizacionComprobantesOffline?wsdl',
   genesisIp: 'http://181.198.196.143:2001/',
   tables: {
