@@ -279,48 +279,99 @@ app.controller('main', ($scope, $http,  $window) =>
 	$scope.mail = () => {
 		var i = $scope.datum.current;
 		var database = $scope.empresas.find(j=>j.ruc == $scope.data[i].ruc_emisor);
+		let destinatarios;
 		if (database.mailsDefault.manual)
-			var destinatarios = $scope.datum.destinatarios.concat(','+database.mailsDefault.mail);
+			destinatarios = $scope.datum.destinatarios.concat(','+database.mailsDefault.mail);
 		else
-			var destinatarios = $scope.datum.destinatarios;
-		
+			destinatarios = $scope.datum.destinatarios;
 		$http.get('api/mail/'+$scope.data[i].origin+'/'+$scope.data[i].ce_id+'/'+destinatarios)
-		.success(res => {
-	       Materialize.toast('Correo enviado', 1000, 'green')
-		})
-		.error(err => {
-			Materialize.toast('Error de conexión', 1000, 'red')
-		})
-	}		
+			.success(res => {
+				Materialize.toast('Correo enviado', 1000, 'green')
+			})
+			.error(err => {
+				Materialize.toast('Error de conexión', 1000, 'red')
+			})
+	}	
 
-	$scope.select = i => {
-		$scope.datum.destinatarios=''
-		var tipo = '';
-		switch($scope.data[i].tipo_comprobante){
-        	case 'FV': tipo = 'factura'; break;
-        	case 'CR': tipo = 'comprobanteRetencion'; break;
-        	case 'NC': tipo = 'notaCredito'; break;
-        	case 'ND': tipo = 'notaDebito'; break;
-        	case 'GR': tipo = 'guiaRemision'; break;
-        	case 'LC': tipo = 'liquidacionCompra'; break;
-        }
-		$scope.datum.current = i;
-		var xml = $scope.data[i].ce_xml;
-		xml = xml.replace(/\0/g, '')
-		var parser = new DOMParser();
-        var xmlDoc = parser.parseFromString(xml,"text/xml");
-        var json = xmlToJson(xmlDoc)
-        if (json[tipo].infoAdicional)
-        	if (!json[tipo].infoAdicional.campoAdicional.length){
-        		if (json[tipo].infoAdicional.campoAdicional["@attributes"].nombre == 'Email')
-        			$scope.datum.destinatarios += json[tipo].infoAdicional.campoAdicional["#text"] 
-        	}
-        	else {
-        		json[tipo].infoAdicional.campoAdicional.forEach(i => {
-        			if (i["@attributes"].nombre == 'Email')
-        				$scope.datum.destinatarios += i["#text"] 
-        		})
-        	}
+	$scope.openMail = async (idx) => {
+		try {
+			$scope.datum.destinatarios = '';
+			$scope.datum.current = idx;
+			const row = $scope.data[idx];
+			if (!row || !row.ce_id) {
+				Materialize.toast('Documento sin XML (ce_id vacío)', 1500, 'red');
+				openModal('mail');
+				return;
+			}
+
+			let tipo = '';
+			switch (row.tipo_comprobante) {
+				case 'FV': tipo = 'factura'; break;
+				case 'CR': tipo = 'comprobanteRetencion'; break;
+				case 'NC': tipo = 'notaCredito'; break;
+				case 'ND': tipo = 'notaDebito'; break;
+				case 'GR': tipo = 'guiaRemision'; break;
+				case 'LC': tipo = 'liquidacionCompra'; break;
+				default:
+					Materialize.toast('Tipo de comprobante no soportado', 1500, 'red');
+					openModal('mail');
+					return;
+			}
+
+			let xml = row.ce_xml;
+
+			if (!xml || !xml.trim()) {
+				const db = row.origin;
+				const resXml = await fetch(`/api/getXmlById/${encodeURIComponent(db)}/${encodeURIComponent(row.ce_id)}`);
+				if (!resXml.ok) {
+					Materialize.toast('XML no disponible para este comprobante', 1500, 'orange');
+					openModal('mail');
+					return;
+				}
+				xml = await resXml.text();
+			}
+
+			xml = xml.replace(/\0/g, '');
+			const parser = new DOMParser();
+			const xmlDoc = parser.parseFromString(xml, 'text/xml');
+			const json = xmlToJson(xmlDoc);
+
+			const root = json[tipo];
+			let emails = '';
+
+			if (root && root.infoAdicional && root.infoAdicional.campoAdicional) {
+				let campos = root.infoAdicional.campoAdicional;
+
+				if (!Array.isArray(campos)) {
+					campos = [campos];
+				}
+
+				campos.forEach(c => {
+					const nombre = c['@attributes'] && c['@attributes'].nombre;
+					if (nombre && nombre.toLowerCase() === 'email') {
+						const texto = (c['#text'] || c._text || '').trim();
+						if (texto) {
+							emails += (emails ? ',' : '') + texto;
+						}
+					}
+				});
+			}
+
+			if (emails) {
+				emails = emails.replace(/;/g, ',');
+			}
+
+			$scope.$apply(() => {
+				$scope.datum.destinatarios = emails;
+			});
+
+			openModal('mail');
+
+		} catch (err) {
+			console.error(err);
+			Materialize.toast('Error leyendo XML para correo', 1500, 'red');
+			openModal('mail');
+		}
 	}
 });
 

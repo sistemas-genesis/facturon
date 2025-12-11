@@ -1,21 +1,29 @@
 class WhatsAppGenesis {
   static token = "";
   static async generateToken(phoneNumerId) {
-    const res = await fetch(
-      `${process.env.WHATSAPP_BASE_URL}/phones/token/${phoneNumerId}`,
-      {
-        method: "POST",
+    try {
+      const res = await fetch(
+        `${process.env.WHATSAPP_BASE_URL}/phones/token/${phoneNumerId}`,
+        {
+          method: "POST",
+        }
+      );
+      if (res.ok) {
+        const json = await res.json();
+
+        WhatsAppGenesis.token = json.token;
+        return json.token;
+      } else {
+        console.error("Error al generar token:", await res.text());
+        WhatsAppGenesis.token = null;
+        return null;
       }
-    );
-    if (res.ok) {
-      const json = await res.json();
 
-      WhatsAppGenesis.token = json.token;
-      return json.token;
+    } catch (err) {
+      console.error("Fallo en la petición de token:", err.message);
+      WhatsAppGenesis.token = null;
+      return null;
     }
-
-    WhatsAppGenesis.token = null;
-    return null;
   }
   static async send(
     options = {
