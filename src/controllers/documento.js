@@ -96,8 +96,15 @@ ctrl.getXmlById = (req, res) => {
       if (!rows || !rows[0] || !rows[0].ce_xml) {
         return res.status(404).json({ success:false, msg:'XML no disponible' });
       }
+      let xml = rows[0].ce_xml;
+
+      // limpieza del XML
+      xml = xml.replace(/\0/g, '');
+      xml = xml.replace(/[\u0000-\u001F\u007F]/g, ''); 
+      xml = xml.replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, '&amp;');
+
       res.setHeader('Content-Type', 'application/xml; charset=utf-8');
-      return res.send(rows[0].ce_xml);
+      return res.send(xml);
     });
   });
 };
@@ -129,12 +136,22 @@ ctrl.rideFactura = (req, res) => {
     );
     // imgSrc = path.normalize(imgSrc);
     if (imgSrc) {
-      const logoPath = imgSrc;
-      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+      try {
+        const logoPath = path.normalize(imgSrc);
+        if (fs.existsSync(logoPath)) {
+          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+        } else {
+          console.warn('Logo no encontrado en ruta:', logoPath);
+          imgSrc = '';
+        }
+      } catch (err) {
+        console.error('Error leyendo logo:', err.message);
+        imgSrc = '';
+      }
     } else {
-      console.log("No se encuentra logo");
-	  }
+      console.log('No se encuentra logo');
+    }
     var contribuyenteEspecial = factura.infoFactura[0].contribuyenteEspecial
       ? "CONTRIBUYENTE ESPECIAL: " +
       factura.infoFactura[0].contribuyenteEspecial[0]
