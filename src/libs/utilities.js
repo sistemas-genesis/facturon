@@ -36,6 +36,11 @@ ctrl.task = () =>{
 	          if(err) console.log(err);
 	          data.forEach(j => {
 	            parseString(j.ce_xml, async (err, result) => {
+	              const doc = result?.infoTributaria ? result : (result?.factura || result?.comprobanteRetencion || result?.notaCredito || result?.notaDebito || result?.guiaRemision);
+				  if (!doc?.infoTributaria) {
+				  	console.error("XML no esta correcto (sin infoTributaria): " + j.ce_id, result);
+					return;
+				  }
 	              var tipo_comprobante = Object.keys(result)[0];
 	              var to = ctrl.getMailFromXml(result[tipo_comprobante]);
 	              if(to){
