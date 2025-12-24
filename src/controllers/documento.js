@@ -66,7 +66,7 @@ ctrl.getLike = (req, res) => {
     " AND ('" + req.body.punto + "' LIKE '%'+SUBSTR(numero_comprobante, 5,3)+'%' OR ',' = '" + req.body.punto + "') " +
     " AND '" + req.body.tipos + "' LIKE '%,'+tipo_comprobante+',%'";
   const db = new Sybase(connection.host, connection.port, connection.db, connection.user, connection.pass);
-  db.connect(err  => {
+  db.connect(err => {
     if (err) console.log(err);
     db.query(query, async (err, data) => {
       if (err) console.log(err);
@@ -88,19 +88,19 @@ ctrl.getXmlById = (req, res) => {
   const q = "SELECT TOP 1 ce_xml FROM ce_comprobante WHERE ce_id = " + id;
   const db = new Sybase(connection.host, connection.port, connection.db, connection.user, connection.pass);
   db.connect(err => {
-    if (err) return res.status(500).json({ success:false, msg: err.message });
+    if (err) return res.status(500).json({ success: false, msg: err.message });
 
     db.query(q, (err, rows) => {
       db.disconnect();
-      if (err) return res.status(500).json({ success:false, msg: err.message });
+      if (err) return res.status(500).json({ success: false, msg: err.message });
       if (!rows || !rows[0] || !rows[0].ce_xml) {
-        return res.status(404).json({ success:false, msg:'XML no disponible' });
+        return res.status(404).json({ success: false, msg: 'XML no disponible' });
       }
       let xml = rows[0].ce_xml;
 
       // limpieza del XML
       xml = xml.replace(/\0/g, '');
-      xml = xml.replace(/[\u0000-\u001F\u007F]/g, ''); 
+      xml = xml.replace(/[\u0000-\u001F\u007F]/g, '');
       xml = xml.replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, '&amp;');
 
       res.setHeader('Content-Type', 'application/xml; charset=utf-8');
@@ -684,12 +684,22 @@ ctrl.rideRetencion = (req, res) => {
       );
     // imgSrc = path.normalize(imgSrc);
     if (imgSrc) {
-      const logoPath = imgSrc;
-      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+      try {
+        const logoPath = path.normalize(imgSrc);
+        if (fs.existsSync(logoPath)) {
+          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+        } else {
+          console.warn('Logo no encontrado en ruta:', logoPath);
+          imgSrc = '';
+        }
+      } catch (err) {
+        console.error('Error leyendo logo:', err.message);
+        imgSrc = '';
+      }
     } else {
-      console.log("No se encuentra logo");
-	  }
+      console.log('No se encuentra logo');
+    }
     //Generación de barcode clave de acceso
     let barcode = await utilities.getBarcode(
       comprobanteRetencion.infoTributaria[0].claveAcceso[0]
@@ -893,12 +903,22 @@ ctrl.rideRetencion2 = (req, res) => {
       );
     // imgSrc = path.normalize(imgSrc);
     if (imgSrc) {
-      const logoPath = imgSrc;
-      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+      try {
+        const logoPath = path.normalize(imgSrc);
+        if (fs.existsSync(logoPath)) {
+          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+        } else {
+          console.warn('Logo no encontrado en ruta:', logoPath);
+          imgSrc = '';
+        }
+      } catch (err) {
+        console.error('Error leyendo logo:', err.message);
+        imgSrc = '';
+      }
     } else {
-      console.log("No se encuentra logo");
-	  }
+      console.log('No se encuentra logo');
+    }
     //Generación de barcode clave de acceso
     let barcode = await utilities.getBarcode(
       comprobanteRetencion.infoTributaria[0].claveAcceso[0]
@@ -1106,12 +1126,22 @@ ctrl.rideCredito = (req, res) => {
       );
     // imgSrc = path.normalize(imgSrc);
     if (imgSrc) {
-      const logoPath = imgSrc;
-      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+      try {
+        const logoPath = path.normalize(imgSrc);
+        if (fs.existsSync(logoPath)) {
+          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+        } else {
+          console.warn('Logo no encontrado en ruta:', logoPath);
+          imgSrc = '';
+        }
+      } catch (err) {
+        console.error('Error leyendo logo:', err.message);
+        imgSrc = '';
+      }
     } else {
-      console.log("No se encuentra logo");
-	  }
+      console.log('No se encuentra logo');
+    }
     var contribuyenteEspecial = notaCredito.infoNotaCredito[0]
       .contribuyenteEspecial
       ? notaCredito.infoNotaCredito[0].contribuyenteEspecial[0]
@@ -1316,12 +1346,22 @@ ctrl.rideDebito = (req, res) => {
       utilities.getLogoByRuc(notaDebito.infoTributaria[0].ruc[0]);
     // imgSrc = path.normalize(imgSrc);
     if (imgSrc) {
-      const logoPath = imgSrc;
-      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+      try {
+        const logoPath = path.normalize(imgSrc);
+        if (fs.existsSync(logoPath)) {
+          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+        } else {
+          console.warn('Logo no encontrado en ruta:', logoPath);
+          imgSrc = '';
+        }
+      } catch (err) {
+        console.error('Error leyendo logo:', err.message);
+        imgSrc = '';
+      }
     } else {
-      console.log("No se encuentra logo");
-	  }
+      console.log('No se encuentra logo');
+    }
     var canvas = Canvas.createCanvas();
     JsBarcode(canvas, notaDebito.infoTributaria[0].claveAcceso[0], {
       width: 4,
@@ -1501,12 +1541,22 @@ ctrl.rideRemision = (req, res) => {
       );
     // imgSrc = path.normalize(imgSrc);
     if (imgSrc) {
-      const logoPath = imgSrc;
-      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+      try {
+        const logoPath = path.normalize(imgSrc);
+        if (fs.existsSync(logoPath)) {
+          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+        } else {
+          console.warn('Logo no encontrado en ruta:', logoPath);
+          imgSrc = '';
+        }
+      } catch (err) {
+        console.error('Error leyendo logo:', err.message);
+        imgSrc = '';
+      }
     } else {
-      console.log("No se encuentra logo");
-	  }
+      console.log('No se encuentra logo');
+    }
     let barcode = await utilities.getBarcode(
       guiaRemision.infoTributaria[0].claveAcceso[0]
     );
@@ -1709,12 +1759,22 @@ ctrl.rideLiquidacion = (req, res) => {
       );
     // imgSrc = path.normalize(imgSrc);
     if (imgSrc) {
-      const logoPath = imgSrc;
-      const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-      imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+      try {
+        const logoPath = path.normalize(imgSrc);
+        if (fs.existsSync(logoPath)) {
+          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
+        } else {
+          console.warn('Logo no encontrado en ruta:', logoPath);
+          imgSrc = '';
+        }
+      } catch (err) {
+        console.error('Error leyendo logo:', err.message);
+        imgSrc = '';
+      }
     } else {
-      console.log("No se encuentra logo");
-	  }
+      console.log('No se encuentra logo');
+    }
     //Parametrización de la leyenda del catastro
     var leyenda_catastro = utilities.getLeyendaCatastro(liquidacionCompra);
     //Fin
