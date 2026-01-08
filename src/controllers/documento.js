@@ -1649,7 +1649,10 @@ ctrl.rideRemision = (req, res) => {
       var numDocSustento = i.numDocSustento ? i.numDocSustento[0] : "";
       var ruta = i.ruta ? i.ruta[0] : "";
       var motivoTraslado = i.motivoTraslado ? i.motivoTraslado[0] : "";
-
+      var razonSocialDestinatario = i.razonSocialDestinatario ? i.razonSocialDestinatario[0] : "";
+      var identificacionDestinatario = i.identificacionDestinatario ? i.identificacionDestinatario[0] : "";
+      var dirDestinatario = i.dirDestinatario ? i.dirDestinatario[0] : "";
+      
       body +=
         '<div style="border: 0.1em gray solid; width: 90%; padding-top: 1em; padding-bottom: 1em; margin-top: 1em"><table id="infoCliente">' +
         '<tr><td style="font-weight:bold">Tipo:</td><td>' +
@@ -1663,17 +1666,17 @@ ctrl.rideRemision = (req, res) => {
         numDocSustento +
         "</td></tr>" +
         '<tr><td style="font-weight:bold">Destinatario:</td><td>' +
-        i.razonSocialDestinatario[0] +
+        razonSocialDestinatario +
         '</td> <td style="font-weight:bold"> RUC/CI: </td><td>' +
-        i.identificacionDestinatario[0] +
+        identificacionDestinatario +
         "</td></tr>" +
         '<tr><td style="font-weight:bold">Dirección Destinatario: </td><td colspan="3">' +
-        i.dirDestinatario[0] +
+        dirDestinatario +
         "</td></tr>" +
         '<tr><td style="font-weight:bold">Ruta:</td><td>' +
-        i.ruta[0] +
+        ruta +
         '</td><td style="font-weight:bold"> Motivo: </td><td>' +
-        i.motivoTraslado[0] +
+        motivoTraslado +
         "</td></tr>" +
         "</table>" +
         '<table class="detalle" style="margin-top: 1em"><tr style="font-size: 0.9em; background-color: #0d47a1;  color: white"><th style="padding: 0.7em">CÓDIGO INTERNO</th><th>DESCRIPCIÓN</th><th>CANTIDAD</th></tr>';
