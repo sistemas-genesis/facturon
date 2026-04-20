@@ -2,7 +2,6 @@ const moment = require('moment')
 const express = require('express');
 const Sybase = require('sybase');
 const path = require('path');
-const pdf = require('html-pdf');
 const fs = require('fs');
 const axios = require('axios')
 const parseString = require('xml2js').parseString;

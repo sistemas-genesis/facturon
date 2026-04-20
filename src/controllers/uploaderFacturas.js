@@ -1,6 +1,5 @@
 ﻿const express = require('express');
 const parseString = require('xml2js').parseString;
-const soap = require('soap');
 const params = require('../libs/params');
 const utilities = require('../libs/utilities');
 const moment = require('moment')
@@ -17,10 +16,8 @@ ctrl.getFacturaCompra = async(req, res) => {
   var query = "";
   
   xmls.forEach(i => {
-    soap.createClientAsync(params.soap).then((client) => {
-        return client.autorizacionComprobanteAsync({claveAccesoComprobante: i.clave_acceso});
-    }).then((result) => {
-      parseString(result[1], (err, result) => {
+    utilities.autorizacionComprobante(i.clave_acceso).then((xmlResponse) => {
+      parseString(xmlResponse, (err, result) => {
         if (!err){
           parseString(utilities.getDataFromSoap(result), (err, r) => {
           query = "";
@@ -64,10 +61,8 @@ ctrl.getFacturaCompra = async(req, res) => {
 ctrl.getFacturaCompraIndividual = async(req, res) => {
   const connection = utilities.dbConnection(req.params.db);
   var query = "";
-    soap.createClientAsync(params.soap).then((client) => {
-        return client.autorizacionComprobanteAsync({claveAccesoComprobante: req.params.clave_acceso});
-    }).then((result) => {      
-      parseString(result[1], (err, result) => {
+    utilities.autorizacionComprobante(req.params.clave_acceso).then((xmlResponse) => {
+      parseString(xmlResponse, (err, result) => {
         if (!err){
           parseString(utilities.getDataFromSoap(result), (err, r) => {
           query = "";
@@ -132,11 +127,9 @@ ctrl.getFacturaCompraIndividual = async(req, res) => {
 ctrl.getFacturaVentaIndividual = async(req, res) => {
   const connection = utilities.dbConnection(req.params.db);
   var query = "";
-    soap.createClientAsync(params.soap).then((client) => {
-        return client.autorizacionComprobanteAsync({claveAccesoComprobante: req.params.clave_acceso});
-    }).then((result) => {
-      //console.log(result);return;
-      parseString(result[1], (err, result) => {
+    utilities.autorizacionComprobante(req.params.clave_acceso).then((xmlResponse) => {
+      //console.log(xmlResponse);return;
+      parseString(xmlResponse, (err, result) => {
         if (!err){
           parseString(utilities.getDataFromSoap(result), (err, r) => {
           query = "";

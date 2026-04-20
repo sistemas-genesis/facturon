@@ -197,6 +197,26 @@ ctrl.getDataFromSoap = soap => {
 	return soap['soap:Envelope']['soap:Body'][0]['ns2:autorizacionComprobanteResponse'][0].RespuestaAutorizacionComprobante[0].autorizaciones[0].autorizacion[0].comprobante[0];
 }
 
+ctrl.autorizacionComprobante = async claveAccesoComprobante => {
+	const endpoint = params.soap.replace('?wsdl', '');
+	const envelope =
+		'<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ec="http://ec.gob.sri.ws.autorizacion">' +
+			'<soapenv:Header/>' +
+			'<soapenv:Body>' +
+				'<ec:autorizacionComprobante>' +
+					'<claveAccesoComprobante>' + claveAccesoComprobante + '</claveAccesoComprobante>' +
+				'</ec:autorizacionComprobante>' +
+			'</soapenv:Body>' +
+		'</soapenv:Envelope>';
+	const response = await axios.post(endpoint, envelope, {
+		headers: {
+			'Content-Type': 'text/xml; charset=utf-8',
+			'SOAPAction': ''
+		}
+	});
+	return response.data;
+}
+
 ctrl.executeSQL = (dbjson, query) => {
 	let db = new Sybase(dbjson.host, dbjson.port, dbjson.db, dbjson.user, dbjson.pass); 
 	db.connect( (err) => {

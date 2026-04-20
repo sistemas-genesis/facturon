@@ -2,7 +2,6 @@
 const express = require('express');
 const Sybase = require('sybase');
 const path = require('path');
-const pdf = require('html-pdf');
 const fsPromises = require('fs').promises;
 const fs = require('fs');
 const axios = require('axios')
