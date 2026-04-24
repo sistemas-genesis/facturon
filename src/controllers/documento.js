@@ -111,51 +111,60 @@ ctrl.getXmlById = (req, res) => {
 
 ctrl.rideFactura = (req, res) => {
   var options = params.optionsRIDE;
+
   parseString(req.body.xml, async (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send();
+    }
+
     var factura = result.factura;
+
     var ambiente =
       factura.infoTributaria[0].ambiente[0] == "1" ? "PRUEBA" : "PRODUCCIÓN";
+
     var tipoEmision =
       factura.infoTributaria[0].tipoEmision[0] == "1" ? "NORMAL" : "";
+
     var direccionComprador = factura.infoFactura[0].direccionComprador
       ? factura.infoFactura[0].direccionComprador[0]
       : "";
-    var imgSrc =
-      // "file://" +
-      // __dirname +
-      // "../../public/img/" +
-      utilities.getLogoByRuc(
-        factura.infoTributaria[0].ruc[0],
-        factura.infoTributaria[0].estab[0],
-        factura.infoTributaria[0].ptoEmi[0]
-      );
+
+    var imgSrc = utilities.getLogoByRuc(
+      factura.infoTributaria[0].ruc[0],
+      factura.infoTributaria[0].estab[0],
+      factura.infoTributaria[0].ptoEmi[0]
+    );
+
     var databaseInfo = utilities.getDatabaseInfoByRuc(
       factura.infoTributaria[0].ruc[0],
       factura.infoTributaria[0].estab[0],
       factura.infoTributaria[0].ptoEmi[0]
     );
-    // imgSrc = path.normalize(imgSrc);
+
     if (imgSrc) {
       try {
         const logoPath = path.normalize(imgSrc);
         if (fs.existsSync(logoPath)) {
-          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+          const logoBase64 = fs.readFileSync(logoPath).toString("base64");
           imgSrc = `data:image/jpeg;base64,${logoBase64}`;
         } else {
-          console.warn('Logo no encontrado en ruta:', logoPath);
-          imgSrc = '';
+          console.warn("Logo no encontrado en ruta:", logoPath);
+          imgSrc = "";
         }
       } catch (err) {
-        console.error('Error leyendo logo:', err.message);
-        imgSrc = '';
+        console.error("Error leyendo logo:", err.message);
+        imgSrc = "";
       }
     } else {
-      console.log('No se encuentra logo');
+      console.log("No se encuentra logo");
+      imgSrc = "";
     }
+
     var contribuyenteEspecial = factura.infoFactura[0].contribuyenteEspecial
-      ? "CONTRIBUYENTE ESPECIAL: " +
-      factura.infoFactura[0].contribuyenteEspecial[0]
+      ? "CONTRIBUYENTE ESPECIAL: " + factura.infoFactura[0].contribuyenteEspecial[0]
       : "";
+
     var placa = factura.infoFactura[0].placa
       ? factura.infoFactura[0].placa[0]
       : "";
@@ -163,15 +172,15 @@ ctrl.rideFactura = (req, res) => {
     let barcode = await utilities.getBarcode(
       factura.infoTributaria[0].claveAcceso[0]
     );
-    //Validar show de detAdicional: -1 no mostrar nada, 0 mostrar todo, 1 mostrar el ultimo
+
     var detAdicional = params.RIDE.optionalItems.detAdicional.status
       ? params.RIDE.optionalItems.detAdicional.mode
       : -1;
 
-    //Parametrización de la leyenda del catastro
     var leyenda_catastro = utilities.getLeyendaCatastro(factura);
-    //Fin
-    var body = `<table id="infoRide">
+
+    var body = `<div id="pageContent"><center>
+  <table id="infoRide">
     <tr>
       <td rowspan="4">
         <img src="${imgSrc}" />
@@ -194,17 +203,10 @@ ctrl.rideFactura = (req, res) => {
       </td>
     </tr>
   </table>
-  
-  <table id="infoEmpresa" cellspacing="0" style="margin: auto" >
+
+  <table id="infoEmpresa" cellspacing="0" style="margin: auto">
     <tr>
-      <td
-        colspan="2"
-        style="
-          border-top: 1px solid black;
-          border-left: 1px solid black;
-          border-right: 1px solid black;
-        "
-      >
+      <td colspan="2" style="border-top: 1px solid black; border-left: 1px solid black; border-right: 1px solid black">
         ${factura.infoTributaria[0].razonSocial[0]}
       </td>
       <td style="padding-left: 2em; font-weight: bold">
@@ -233,10 +235,7 @@ ctrl.rideFactura = (req, res) => {
       </td>
     </tr>
     <tr>
-      <td
-        colspan="2"
-        style="border-left: 1px solid black; border-right: 1px solid black"
-      >
+      <td colspan="2" style="border-left: 1px solid black; border-right: 1px solid black">
         ${contribuyenteEspecial}
       </td>
       <td style="padding-left: 2em">
@@ -245,10 +244,7 @@ ctrl.rideFactura = (req, res) => {
       </td>
     </tr>
     <tr>
-      <td
-        colspan="2"
-        style="border-left: 1px solid black; border-right: 1px solid black"
-      >
+      <td colspan="2" style="border-left: 1px solid black; border-right: 1px solid black">
         Obligado a llevar contabilidad: ${factura.infoFactura[0].obligadoContabilidad[0]}
       </td>
       <td style="padding-left: 2em">
@@ -257,10 +253,7 @@ ctrl.rideFactura = (req, res) => {
       </td>
     </tr>
     <tr>
-      <td
-        colspan="2"
-        style="font-size: ${leyenda_catastro.size}; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black"
-      >
+      <td colspan="2" style="font-size: ${leyenda_catastro.size}; border-left: 1px solid black; border-right: 1px solid black; border-bottom: 1px solid black">
         ${leyenda_catastro.text}
       </td>
       <td style="padding-left: 2em; font-weight: bold">Clave de acceso:</td>
@@ -275,7 +268,7 @@ ctrl.rideFactura = (req, res) => {
       </td>
     </tr>
   </table>
-  
+
   <table id="infoCliente" style="margin: auto">
     <tr>
       <td colspan="4">
@@ -291,23 +284,20 @@ ctrl.rideFactura = (req, res) => {
     </tr>
     <tr>
       <td colspan="4">
-        <span style="font-weight: bold">Dirección: </span>${direccionComprador != '' ? direccionComprador : ''}
+        <span style="font-weight: bold">Dirección: </span>${direccionComprador}
       </td>
     </tr>
     <tr>
-      <td colspan="4"><span style="font-weight: bold">Placa: </span>${placa != '' ? placa : ''}</td>
-    </tr>    
+      <td colspan="4"><span style="font-weight: bold">Placa: </span>${placa}</td>
+    </tr>
   </table>
   `;
 
     body += `
-    </table>
-      <table id="detalle" style="margin-top: 1em;margin: auto" >
-          <tr style="font-size: 0.9em; background-color: #0d47a1;  color: white">
-              <th style="padding: 0.7em">
-                  ${params.RIDE.name.codigoPrincipal}
-              </th>      
-    `
+      <table id="detalle" style="margin-top: 1em; margin: auto">
+        <tr style="font-size: 0.9em; background-color: #0d47a1; color: white">
+          <th style="padding: 0.7em">${params.RIDE.name.codigoPrincipal}</th>
+    `;
 
     body += params.RIDE.optionalItems.codigoAuxiliar
       ? `<th>${params.RIDE.name.codigoAuxiliar}</th>`
@@ -316,85 +306,91 @@ ctrl.rideFactura = (req, res) => {
     body += `<th>${params.RIDE.name.descripcion}</th>`;
     body += `<th>${params.RIDE.name.cantidad}</th>`;
     body += `<th>${params.RIDE.name.precioUnitario}</th>`;
-    if (detAdicional == 0) params.RIDE.optionalItems.detAdicional.names.forEach((i) => (body += `<th>${i}</th>`));
 
-    //Parametrización del subsidio
+    if (detAdicional == 0) {
+      params.RIDE.optionalItems.detAdicional.names.forEach((i) => {
+        body += `<th>${i}</th>`;
+      });
+    }
+
     if (databaseInfo.subsidio.status) {
       body += `
-            <th>${databaseInfo.subsidio.label.subsidio}</th>
-            <th>${databaseInfo.subsidio.label.precio_sin_subsidio}</th>      
+        <th>${databaseInfo.subsidio.label.subsidio}</th>
+        <th>${databaseInfo.subsidio.label.precio_sin_subsidio}</th>
       `;
     }
-    //Fin
+
     body += `
-      <th>${params.RIDE.name.descuento}</th>
-      <th>${params.RIDE.name.precioTotal}</th>
-    </tr>    
+          <th>${params.RIDE.name.descuento}</th>
+          <th>${params.RIDE.name.precioTotal}</th>
+        </tr>
     `;
+
     var total_subsidio = 0;
 
     factura.detalles[0].detalle.forEach((i) => {
       const precioUnitario = parseFloat(i.precioUnitario[0]);
+
       body += `
-          <tr>
-            <td style="text-align: center; font-size: 0.7em">${i.codigoPrincipal[0]}</td>
-      `;
-      if (params.RIDE.optionalItems.codigoAuxiliar)
-        body += i.codigoAuxiliar ? `<td style="font-size: 0.7em">${i.codigoAuxiliar[0]}</td>` : `<td></td>`;
-      body += `<td style="font-size: .8em">${i.descripcion[0]}</td>`;
-      body += `<td style="text-align: center">${parseFloat(i.cantidad[0]).toFixed(2)}</td>`;
-      if (detAdicional == 0)
-        for (var j = 0; j < params.RIDE.optionalItems.detAdicional.names.length; j++) {
-          if (i.detallesAdicionales)
-            body += i.detallesAdicionales[0].detAdicional[j]
-              ? `
-              <td style="font-size: 0.8em">
-                ${i.detallesAdicionales[0].detAdicional[j]["$"].valor}
-              </td>
-            `
-              : `<td></td>`;
-          else body += `<td></td>`;
-        }
-      body += `
-      <td>
-        <span style="text-align:left">$</span>
-        <span style="float: right; background-color: #f5f5f5">
-          ${parseFloat(i.precioUnitario[0]).toFixed(2)}
-          </span>
-      </td>
+        <tr>
+          <td style="text-align: center; font-size: 0.7em">${i.codigoPrincipal[0]}</td>
       `;
 
-      //Parametrización del subsidio
-      if (databaseInfo.subsidio.status) {
-        var precioSinSubsidio = parseFloat(i.precioSinSubsidio[0]);
-
-        var cantidad = parseFloat(i.cantidad[0]);
-        subsidio = precioUnitario * cantidad - precioSinSubsidio;
-        total_subsidio += subsidio;
-        body += `
-            <td style="text-align: right">${subsidio.toFixed(6)}</td>
-            <td style="text-align: right">${precioSinSubsidio.toFixed(2)}</td>
-        `;
+      if (params.RIDE.optionalItems.codigoAuxiliar) {
+        body += i.codigoAuxiliar
+          ? `<td style="font-size: 0.7em">${i.codigoAuxiliar[0]}</td>`
+          : `<td></td>`;
       }
 
-      //descuento
+      body += `<td style="font-size: .8em">${i.descripcion[0]}</td>`;
+      body += `<td style="text-align: center">${parseFloat(i.cantidad[0]).toFixed(2)}</td>`;
 
       body += `
         <td>
-            <span style="float: right; background-color: #f5f5f5">
-            ${parseFloat(i.descuento[0]).toFixed(2)}
-            </span>
+          <span style="text-align:left">$</span>
+          <span style="float: right; background-color: #f5f5f5">
+            ${parseFloat(i.precioUnitario[0]).toFixed(2)}
+          </span>
         </td>
       `;
 
-      // subtotal
+      if (detAdicional == 0) {
+        for (var j = 0; j < params.RIDE.optionalItems.detAdicional.names.length; j++) {
+          if (i.detallesAdicionales && i.detallesAdicionales[0].detAdicional[j]) {
+            body += `
+              <td style="font-size: 0.8em">
+                ${i.detallesAdicionales[0].detAdicional[j]["$"].valor}
+              </td>
+            `;
+          } else {
+            body += `<td></td>`;
+          }
+        }
+      }
+
+      if (databaseInfo.subsidio.status) {
+        var precioSinSubsidio = parseFloat(i.precioSinSubsidio[0]);
+        var cantidad = parseFloat(i.cantidad[0]);
+        var subsidio = precioUnitario * cantidad - precioSinSubsidio;
+        total_subsidio += subsidio;
+
+        body += `
+          <td style="text-align: right">${subsidio.toFixed(6)}</td>
+          <td style="text-align: right">${precioSinSubsidio.toFixed(2)}</td>
+        `;
+      }
 
       body += `
         <td>
-            <span style="text-align:left">$</span>
-            <span style="float: right; background-color: #f5f5f5">
+          <span style="float: right; background-color: #f5f5f5">
+            ${parseFloat(i.descuento[0]).toFixed(2)}
+          </span>
+        </td>
+        <td>
+          <span style="text-align:left">$</span>
+          <span style="float: right; background-color: #f5f5f5">
             ${(parseFloat(i.precioTotalSinImpuesto[0]) + parseFloat(i.descuento[0])).toFixed(2)}
-            </span>
+          </span>
         </td>
       </tr>
       `;
@@ -402,81 +398,110 @@ ctrl.rideFactura = (req, res) => {
 
     var colspan = utilities.getColspan();
     var rowspan = utilities.getRowspan();
+
     if (detAdicional == 2) {
-      if (factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales)
-        body += '<tr ><td style="text-align: center; font-size: 0.7em" colspan="' + (7 + colspan) + '">' +
-          factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales[0].detAdicional[0]["$"].valor + "</td></tr>";
+      if (factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales) {
+        body +=
+          '<tr><td style="text-align: center; font-size: 0.7em" colspan="' +
+          (7 + colspan) +
+          '">' +
+          factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales[0].detAdicional[0]["$"].valor +
+          "</td></tr>";
+      }
     }
 
-    //Sacar totales
+    const getValor = (v) => Array.isArray(v) ? v[0] : v;
+
+    const getPorcentajeIVA = (codigoPorcentaje) => {
+      const cod = String(getValor(codigoPorcentaje));
+
+      let porcentaje = params.getItem(params.sri.codigoIVA, "codigo", cod, "porcentaje");
+
+      if (porcentaje === undefined || porcentaje === null || porcentaje === "") {
+        porcentaje = params.sri.tarifaIVA ? params.sri.tarifaIVA[cod] : "";
+      }
+
+      return porcentaje !== undefined && porcentaje !== null && porcentaje !== ""
+        ? porcentaje
+        : cod;
+    };
+
+    const impuestos = factura.infoFactura[0].totalConImpuestos[0].totalImpuesto || [];
+
     var subtotal = 0.0;
-    var subtotal12 = 0.0;
     var subtotal0 = 0.0;
     var subtotalnoi = 0.0;
-    var iva = 0.0;
     var ice = 0.0;
-    var nombreImpuesto = '15%'
-    let nombreIVA = '15%';
-    let codigo = 0; codigoPorcentaje = 0;
+
+    factura.detalles[0].detalle.forEach((i) => {
+      subtotal += parseFloat(i.cantidad[0]) * parseFloat(i.precioUnitario[0]);
+    });
+
+    impuestos.forEach((i) => {
+      const codigoImp = String(getValor(i.codigo));
+      const codigoPorcentaje = String(getValor(i.codigoPorcentaje));
+      const base = parseFloat(getValor(i.baseImponible) || 0);
+
+      if (codigoImp === "2" && codigoPorcentaje === "0") {
+        subtotal0 += base;
+      }
+
+      if (codigoImp === "2" && codigoPorcentaje === "6") {
+        subtotalnoi += base;
+      }
+
+      if (codigoImp === "3") {
+        ice += parseFloat(getValor(i.valor) || 0);
+      }
+    });
+
     body += `
       <tr class="totalDetalle">
         <td
-        rowspan="${factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length}"
-          colspan="${(2 + colspan)}"
-          style="color: #0d47a1; font-size: 0.9em; color: #0d47a1"
+          rowspan="${impuestos.length}"
+          colspan="${2 + colspan}"
+          style="color: #0d47a1; font-size: 0.9em"
         >
           Información Adicional
         </td>
     `;
 
-    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map((i, index) => {
-      codigo = params.getItem(params.sri.codigoIVA, 'codigo', i.codigo, 'codigo')
-      codigoPorcentaje = params.getItem(params.sri.codigoIVA, 'codigo', i.codigoPorcentaje, 'codigo')
-      if (i.codigo == codigo && i.codigoPorcentaje == codigoPorcentaje) {
-        //iva = parseFloat(i.valor);
-        subtotal12 = parseFloat(i.baseImponible);
-        nombreImpuesto = params.getItem(params.sri.codigoIVA, 'codigo', codigoPorcentaje, 'porcentaje')
-      }
-      body += `
-          <td colspan="3" style="background-color: #f5f5f5">SUBTOTAL ${nombreImpuesto}%</td>
+    impuestos.forEach((i, index) => {
+      const codigoImp = String(getValor(i.codigo));
+      const porcentaje = getPorcentajeIVA(i.codigoPorcentaje);
+      const base = parseFloat(getValor(i.baseImponible) || 0);
+
+      if (codigoImp === "2") {
+        body += `
+          <td colspan="3" style="background-color: #f5f5f5">SUBTOTAL ${porcentaje}%</td>
           <td>
             <span style="text-align: left">$</span>
             <span style="float: right; background-color: #f5f5f5">
-              ${subtotal12.toFixed(2)}
+              ${base.toFixed(2)}
             </span>
           </td>
         </tr>
         <tr class="totalDetalle">
-      `;
-      // if(index>0) body+= `<td colspan="${(2 + colspan)}" style="font-size: 0.9em">`
-      if (index == factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length - 1) body += `<td rowspan=${(factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.length > 1 ? 9 : 8 + rowspan)} colspan="${(2 + colspan)}" style="font-size: 0.9em">`
-      return body
-    })
+        `;
+      }
 
-    /*factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.forEach((i) => {
-      if (i.codigo == "2" && i.codigoPorcentaje == "2") {
-        iva = parseFloat(i.valor);
-        subtotal12 = parseFloat(i.baseImponible);
-      } else if (i.codigo == "2" && i.codigoPorcentaje == "6") {
-        subtotalnoi = parseFloat(i.baseImponible);
-      } else if (i.codigo == "2") subtotal0 = parseFloat(i.baseImponible);
-      else if (i.codigo == "3") ice = parseFloat(i.baseImponible);
-    });*/
-    factura.detalles[0].detalle.forEach((i) => {
-      subtotal = subtotal + i.cantidad * i.precioUnitario;
+      if (index == impuestos.length - 1) {
+        body += `<td rowspan="${impuestos.length > 1 ? 9 : 8 + rowspan}" colspan="${2 + colspan}" style="font-size: 0.9em">`;
+      }
     });
-    //subtotal=subtotal12+subtotal0;
 
-
-    if (detAdicional == 1)
-      if (factura.infoAdicional && factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales)
+    if (detAdicional == 1) {
+      if (
+        factura.infoAdicional &&
+        factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales
+      ) {
         factura.infoAdicional[0].campoAdicional.push({
           $: { nombre: "Descripcion" },
           _: factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales[0].detAdicional[0]["$"].valor,
         });
-      else if (
+      } else if (
         factura.detalles[0].detalle[factura.detalles[0].detalle.length - 1].detallesAdicionales
-      )
+      ) {
         factura.infoAdicional = [
           {
             campoAdicional: [
@@ -487,114 +512,125 @@ ctrl.rideFactura = (req, res) => {
             ],
           },
         ];
+      }
+    }
 
     if (factura.infoAdicional) {
       factura.infoAdicional[0].campoAdicional.forEach((i) => {
-        body += `<span style="color: #0d47a1">-${i["$"].nombre}": </span><br>${i["_"]}<br>`;
+        body += `<span style="color: #0d47a1">-${i["$"].nombre}: </span><br>${i["_"]}<br>`;
       });
     }
 
-    //Validación de propina
-    if (params.RIDE.optionalItems.propina.status)
-      body +=
-        `
-              </td>
-                <td colspan="3" style="background-color: #f5f5f5  ">
-                ${params.RIDE.optionalItems.propina.name}
-              </td>
-              <td>
-                  <span style="text-align:left">$</span>
-                  <span style="float: right; background-color: #f5f5f5"> 
-                    ${parseFloat(factura.infoFactura[0].propina[0])}
-                  </span>
-              </td>
-            </tr>
-          <tr class="totalDetalle">
-        `;
-
-    body += `
-      </td>
-      <td colspan="3" style="background-color: #f5f5f5 ">SUBTOTAL 0%</td>
-      <td>
+    if (params.RIDE.optionalItems.propina.status) {
+      body += `
+        </td>
+        <td colspan="3" style="background-color: #f5f5f5">
+          ${params.RIDE.optionalItems.propina.name}
+        </td>
+        <td>
           <span style="text-align:left">$</span>
           <span style="float: right; background-color: #f5f5f5">
-              ${subtotal0.toFixed(2)}
+            ${parseFloat(factura.infoFactura[0].propina[0]).toFixed(2)}
           </span>
-      </td>
-    </tr>
-
-    </td>
-        <td colspan="3" style="background-color: #f5f5f5  ">SUBTOTAL NO OBJETO DE IVA</td>
-        <td>
-            <span style="text-align:left">$</span>
-            <span style="float: right; background-color: #f5f5f5">${subtotalnoi.toFixed(2)}</span>
         </td>
-    </tr>
-    </td>
-
-      <td colspan="3" style="background-color: #f5f5f5  ">SUBTOTAL SIN IMPUESTO</td>
-      <td>
-          <span style="text-align:left">$</span>
-          <span style="float: right; background-color: #f5f5f5">${(subtotal - factura.infoFactura[0].totalDescuento[0]).toFixed(2)}</span>
-      </td>
-    </tr>
-
-        <td colspan="3" style="background-color: #f5f5f5  ">SUBTOTAL SIN DESCUENTO</td>
-        <td>
-            <span style="text-align:left">$</span>
-            <span style="float: right; background-color: #f5f5f5">${(subtotal - parseFloat(factura.infoFactura[0].totalDescuento[0])).toFixed(2)}</span>
-        </td>
-    </tr>
-    </td>
-        <td colspan="3" style="background-color: #f5f5f5  ">TOTAL DESCUENTO</td>
-        <td>
-            <span style="text-align:left">$</span>
-            <span style="float: right; background-color: #f5f5f5">${factura.infoFactura[0].totalDescuento[0]}</span>
-        </td>
-    </tr>
-    </td>
-
-    <tr class="totalDetalle">
-    <td colspan="3" style="background-color: #f5f5f5 ">ICE</td>
-    <td>
-        <span style="text-align:left">$</span>
-        <span style="float: right; background-color: #f5f5f5">${ice.toFixed(2)}</span>
-    </td>
-    </tr>
-    `;
-    factura.infoFactura[0].totalConImpuestos[0].totalImpuesto.map(i => {
-      codigo = params.getItem(params.sri.codigoIVA, 'codigo', i.codigo, 'codigo')
-      codigoPorcentaje = params.getItem(params.sri.codigoIVA, 'codigo', i.codigoPorcentaje, 'codigo')
-      if (i.codigo == codigo && i.codigoPorcentaje == codigoPorcentaje) {
-        iva = parseFloat(i.valor);
-        //subtotal12 = parseFloat(i.baseImponible);
-        nombreIVA = params.getItem(params.sri.codigoIVA, 'codigo', codigoPorcentaje, 'porcentaje')
-      }
-      return body += `
-        <tr class="totalDetalle">
-          <td colspan="3" style="background-color: #f5f5f5  ">IVA ${nombreIVA} %</td>
-          <td>
-              <span style="text-align:left">$</span>
-              <span style="float: right; background-color: #f5f5f5">${iva.toFixed(2)}</span>
-          </td>
-        </tr>
-      `
-    })
+      </tr>
+      <tr class="totalDetalle">
+      `;
+    }
 
     body += `
-    <tr class="totalDetalle">
-    <td colspan="3" style="background-color: #f5f5f5; font-weight:bold  ">TOTAL</td>
-    <td>
-        <span style="text-align:left">$</span>
-        <span style="float: right; background-color: #f5f5f5; font-weight:bold">${factura.infoFactura[0].importeTotal[0]}</span>
-    </td>
-    </tr>
+  </td>
 
-    <tr class="totalDetalle">
-    <td colspan="${(6 + colspan)}" style="color: #0d47a1 ; font-size: 0.9em; color: #0d47a1 ">Forma de pago: </td>
-    </tr>
-    <tr class="totalDetalle">
+  <tr class="totalDetalle">
+    <td colspan="3" style="background-color: #f5f5f5">SUBTOTAL NO OBJETO DE IVA</td>
+    <td>
+      <span style="text-align:left">$</span>
+      <span style="float: right; background-color: #f5f5f5">
+        ${subtotalnoi.toFixed(2)}
+      </span>
+    </td>
+  </tr>
+
+  <tr class="totalDetalle">
+    <td colspan="3" style="background-color: #f5f5f5">SUBTOTAL SIN IMPUESTO</td>
+    <td>
+      <span style="text-align:left">$</span>
+      <span style="float: right; background-color: #f5f5f5">
+        ${parseFloat(factura.infoFactura[0].totalSinImpuestos[0]).toFixed(2)}
+      </span>
+    </td>
+  </tr>
+
+  <tr class="totalDetalle">
+    <td colspan="3" style="background-color: #f5f5f5">SUBTOTAL SIN DESCUENTO</td>
+    <td>
+      <span style="text-align:left">$</span>
+      <span style="float: right; background-color: #f5f5f5">
+        ${subtotal.toFixed(2)}
+      </span>
+    </td>
+  </tr>
+
+  <tr class="totalDetalle">
+    <td colspan="3" style="background-color: #f5f5f5">TOTAL DESCUENTO</td>
+    <td>
+      <span style="text-align:left">$</span>
+      <span style="float: right; background-color: #f5f5f5">
+        ${parseFloat(factura.infoFactura[0].totalDescuento[0]).toFixed(2)}
+      </span>
+    </td>
+  </tr>
+
+  <tr class="totalDetalle">
+    <td colspan="3" style="background-color: #f5f5f5">ICE</td>
+    <td>
+      <span style="text-align:left">$</span>
+      <span style="float: right; background-color: #f5f5f5">
+        ${ice.toFixed(2)}
+      </span>
+    </td>
+  </tr>
+`;
+
+    impuestos.forEach((i) => {
+      const codigoImp = String(getValor(i.codigo));
+      const porcentaje = getPorcentajeIVA(i.codigoPorcentaje);
+      const valorIva = parseFloat(getValor(i.valor) || 0);
+
+      if (codigoImp === "2") {
+        body += `
+          <tr class="totalDetalle">
+            <td colspan="3" style="background-color: #f5f5f5">IVA ${porcentaje} %</td>
+            <td>
+              <span style="text-align:left">$</span>
+              <span style="float: right; background-color: #f5f5f5">
+                ${valorIva.toFixed(2)}
+              </span>
+            </td>
+          </tr>
+        `;
+      }
+    });
+
+    body += `
+      <tr class="totalDetalle">
+        <td colspan="3" style="background-color: #f5f5f5; font-weight:bold">TOTAL</td>
+        <td>
+          <span style="text-align:left">$</span>
+          <span style="float: right; background-color: #f5f5f5; font-weight:bold">
+            ${factura.infoFactura[0].importeTotal[0]}
+          </span>
+        </td>
+      </tr>
+
+      <tr class="totalDetalle">
+        <td colspan="${6 + colspan}" style="color: #0d47a1; font-size: 0.9em">
+          Forma de pago:
+        </td>
+      </tr>
+      <tr class="totalDetalle">
     `;
+
     if (factura.infoFactura[0].pagos) {
       factura.infoFactura[0].pagos[0].pago.forEach((i) => {
         body +=
@@ -609,9 +645,9 @@ ctrl.rideFactura = (req, res) => {
       });
     }
 
-    //Parametrización del subsidio
     if (databaseInfo.subsidio.status) {
       var total = parseFloat(factura.infoFactura[0].importeTotal[0]);
+
       body +=
         "</tr>" +
         '<tr class="totalDetalle">' +
@@ -628,18 +664,20 @@ ctrl.rideFactura = (req, res) => {
         '<tr class="totalDetalle">' +
         "<td>Incluye IVA cuando corresponda</td>";
     }
-    //Fin
 
     body += "</tr></table></center></div>";
 
     var style =
-      "<style>body {  font-family: Arial, Helvetica, sans-serif;} #pageContent{margin-top: 0.5em} #infoRide{text-align: center; width: 90%;}#infoRide img {width: " +
+      "<style>body { font-family: Arial, Helvetica, sans-serif;} #pageContent{margin-top: 0.5em} #infoRide{text-align: center; width: 90%;}#infoRide img {width: " +
       databaseInfo.imgWidth +
       "; height: " +
       databaseInfo.imgHeight +
-      "}        #infoRide td{width: 50%; padding-left: 1em; padding-right: 1em}        #infoEmpresa {width: 90%; font-size:0.8em}        #infoCliente {width: 90%; border: 1px solid black;border-radius: 0.5em;font-size:0.8em}        #detalle {    border: 1px solid #ddd;border-collapse: collapse;width: 90%; }#detalle tr {    border: 1px solid #ddd;}#detalle td {    border: 1px solid #ddd;padding: 0.5em;font-size: 0.7em} .totalDetalle>td{padding: 0.5em !important}</style>";
+      "} #infoRide td{width: 50%; padding-left: 1em; padding-right: 1em} #infoEmpresa {width: 90%; font-size:0.8em} #infoCliente {width: 90%; border: 1px solid black;border-radius: 0.5em;font-size:0.8em} #detalle {border: 1px solid #ddd;border-collapse: collapse;width: 90%; }#detalle tr {border: 1px solid #ddd;}#detalle td {border: 1px solid #ddd;padding: 0.5em;font-size: 0.7em} .totalDetalle>td{padding: 0.5em !important}</style>";
+
     var html = "<body>" + style + body + "</body>";
+
     fs.writeFileSync("test.html", html);
+
     pdf.create(html, options).toStream(function (err, stream) {
       if (!err) {
         stream.pipe(
@@ -647,13 +685,17 @@ ctrl.rideFactura = (req, res) => {
             factura.infoTributaria[0].claveAcceso[0] + ".pdf"
           )
         );
+
         setTimeout(() => {
           try {
             fs.unlinkSync(factura.infoTributaria[0].claveAcceso[0] + ".pdf");
           } catch (err) { }
         }, 30000);
+
         return res.send(factura.infoTributaria[0].claveAcceso[0] + ".pdf");
       }
+
+      console.error(err);
       return res.status(500).send();
     });
   });
@@ -1652,7 +1694,7 @@ ctrl.rideRemision = (req, res) => {
       var razonSocialDestinatario = i.razonSocialDestinatario ? i.razonSocialDestinatario[0] : "";
       var identificacionDestinatario = i.identificacionDestinatario ? i.identificacionDestinatario[0] : "";
       var dirDestinatario = i.dirDestinatario ? i.dirDestinatario[0] : "";
-      
+
       body +=
         '<div style="border: 0.1em gray solid; width: 90%; padding-top: 1em; padding-bottom: 1em; margin-top: 1em"><table id="infoCliente">' +
         '<tr><td style="font-weight:bold">Tipo:</td><td>' +
