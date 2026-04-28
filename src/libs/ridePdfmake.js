@@ -2,6 +2,7 @@ const PdfPrinter = require('pdfmake');
 const moment = require('moment');
 const params = require('./params');
 const utilities = require('./utilities');
+const { type } = require('os');
 
 const fonts = {
   Helvetica: {
@@ -58,6 +59,7 @@ function outerOnlyBoxLayout() {
     vLineWidth: function (i, node) {
       return (i === 0 || i === node.table.widths.length) ? 1 : 0;
     },
+
     hLineColor: function () { return '#000000'; },
     vLineColor: function () { return '#000000'; },
     paddingLeft: function () { return 8; },
@@ -171,19 +173,41 @@ function writeStream(docDefinition, filePath, onDone, onError) {
 function rideBanner() {
   return {
     margin: [0, 0, 0, 10],
-    layout: noBorders([0, 0, 0, 0]),
-    table: {
-      widths: ['*'],
-      body: [[{
-        text: 'REPRESENTACIÓN IMPRESA DOCUMENTO ELECTRÓNICO (RIDE)',
-        alignment: 'center',
-        bold: true,
-        color: 'white',
-        fillColor: '#1b4ea3',
-        fontSize: 12,
-        margin: [4, 5, 4, 5]
-      }]]
-    }
+    stack: [
+      {
+       canvas: [
+          {
+            type: 'polyline',
+            closePath: true,
+            points: [
+              { x: 0, y: 0 },
+              { x: 120, y: 0 },
+              { x: 60, y: 23 },
+              { x: 0, y: 23 }
+            ],
+            color: '#1a1a1a'
+          }
+        ],
+        // margin: [40, -25, 0, 10]
+        absolutePosition: { x: 26, y: 20 }
+      },
+      {
+        table: {
+          widths: ['*'],
+          body: [[{
+            text: 'REPRESENTACIÓN IMPRESA DOCUMENTO ELECTRÓNICO (RIDE)',
+            alignment: 'center',
+            bold: true,
+            color: 'white',
+            fillColor: '#1b4ea3',
+            fontSize: 14,
+            margin: [4, 5, 4, 5]
+          }]]
+        },
+        layout: noBorders([0, 0, 0, 0])
+      }
+    
+    ],
   };
 }
 
@@ -222,7 +246,15 @@ function buildEmpresaAutorizacionOldStyle(opts) {
             table: {
               widths: ['*'],
               body: [[{
-                stack: [
+                stack:[{
+                  canvas:[{
+                    type: 'rect',
+                    x: 0, y: 0, w: 260, h: 75, r: 8, lineColor: '#000000', lineWidth: 1
+                  }],
+                  margin: [0, 0, 0, -75]
+                },
+                {
+                  stack: [
                   { text: text(opts.razonSocial), bold: false, margin: [0, 0, 0, 3] },
                   {
                     columns: [
@@ -241,10 +273,14 @@ function buildEmpresaAutorizacionOldStyle(opts) {
                   { text: 'Contribuyente Especial: ' + text(opts.contribuyenteEspecial), margin: [0, 0, 0, 3] },
                   { text: 'Obligado a llevar contabilidad: ' + text(opts.obligadoContabilidad), margin: [0, 0, 0, 3] },
                   { text: leyenda, fontSize: 7, margin: [0, 0, 0, 0] }
-                ]
+                ],
+                margin: [5, 5, 5, 5]
+                }
+              ]
+                
               }]]
             },
-            layout: outerOnlyBoxLayout()
+            layout: noBorders([5, 5, 3, 0])
           },
           {
             border: [false, false, false, false],
@@ -295,11 +331,24 @@ function buildEmpresaAutorizacionOldStyle(opts) {
 function buildCliente4Cols(rows) {
   return {
     margin: [0, 0, 0, 8],
-    table: {
-      widths: ['25%', '25%', '25%', '25%'],
+    stack:[{
+      canvas:[{
+        type: 'rect',
+        x: 0, y: 0, w: 543, h: rows.length * 20,
+        r: 8, //borde redondo
+        lineWidth: 1,
+        lineColor: '#000000',
+      }],
+      margin: [0, 0, 0, -rows.length * 20] //superponer rectangulo
+    },
+    {
+      table: {
+      widths: ['auto', '*', 'auto', 'auto'],
       body: rows
     },
-    layout: outerOnlyBoxLayout()
+    layout: noBorders([5, 5, 3, 6])
+    }
+  ]
   };
 }
 
@@ -663,10 +712,10 @@ async function renderFactura(factura, fechaAutorizacion, res) {
       barcode: c.barcode
     },
     cliente: buildCliente4Cols([
-      [{ text: 'Razón Social / Nombres y Apellidos:', bold: true }, { text: factura.infoFactura[0].razonSocialComprador[0], colSpan: 3 }, {}, {}],
-      [{ text: 'RUC / CI:', bold: true }, { text: factura.infoFactura[0].identificacionComprador[0] }, { text: 'Fecha:', bold: true }, { text: factura.infoFactura[0].fechaEmision[0] }],
-      [{ text: 'Dirección:', bold: true }, { text: direccionComprador, colSpan: 3 }, {}, {}],
-      [{ text: 'Placa:', bold: true }, { text: placa, colSpan: 3 }, {}, {}]
+      [{ text: [{ text: 'Razón Social / Nombres y Apellidos: ', bold: true}, { text: factura.infoFactura[0].razonSocialComprador[0] }], colSpan: 4 }, {}, {}, {}],
+      [{ text: [{ text: 'RUC / CI: ', bold: true }, { text: factura.infoFactura[0].identificacionComprador[0], colSpan: 2 }] }, {}, { text: [{ text: 'Fecha: ', bold: true }, { text: factura.infoFactura[0].fechaEmision[0] }], colSpan: 2, alignment: 'center', noWrap: true, margin: [-150, 0, 0, 0] }, {}],
+      [{ text: [{ text: 'Dirección: ', bold: true }, { text: direccionComprador }], colSpan: 4 }, {}, {}, {}],
+      [{ text: [{ text: 'Placa: ', bold: true }, { text: placa }], colSpan: 4 }, {}, {}, {}]
     ]),
     detalle: {
       table: { widths: detalleWidths, headerRows: 1, body: detBody },
@@ -776,7 +825,7 @@ async function renderRetencionBase(comprobanteRetencion, fechaAutorizacion, res,
     cliente: {
       margin: [0, 0, 0, 8],
       table: {
-        widths: ['30%', '20%', '25%', '25%'],
+        widths: ['40%', '20%', '20%', '20%'],
         body: [
           [{ text: 'Razón Social / Nombres y Apellidos:', bold: true }, { text: comprobanteRetencion.infoCompRetencion[0].razonSocialSujetoRetenido[0], colSpan: 3 }, {}, {}],
           [{ text: 'RUC / CI:', bold: true }, { text: comprobanteRetencion.infoCompRetencion[0].identificacionSujetoRetenido[0] }, { text: 'Fecha: Emisión:', bold: true }, { text: comprobanteRetencion.infoCompRetencion[0].fechaEmision[0] }]
