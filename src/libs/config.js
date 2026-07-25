@@ -17,7 +17,11 @@ module.exports = app => {
   // middlewares.
   app.use(cors());
   app.use(morgan('dev'));
-  app.use(express.static(__dirname + '/../public'));
+  app.use(express.static(__dirname + '/../public', {
+    etag: false,
+    lastModified: false,
+    setHeaders: (res) => res.setHeader('Cache-Control', 'no-store')
+  }));
 
   app.use(bodyParser.json({limit: '500mb'}));
   app.use(bodyParser.urlencoded({limit: '500mb', extended: true}));

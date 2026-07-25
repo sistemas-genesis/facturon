@@ -14,12 +14,14 @@ const utilities = require("../libs/utilities");
 var ctrl = {};
 ctrl.get = (req, res) => {
   const fecha = req.body.params.fecha_autorizacion ? 'fecha_autorizacion' : 'fecha_comprobante';
+  const wantVal = utilities.isTrue(req.body.val) || (req.body.params && utilities.isTrue(req.body.params.val));
   const connection = utilities.dbConnection(req.params.db);
   let query = ""
     + "SELECT ce_id, ruc_emisor, ruc_comprador, "
     + "       nombre_comprador = web_clear_special(nombre_comprador), "
     + "       fecha_comprobante, numero_comprobante, clave_acceso, "
     + "       numero_autorizacion, fecha_autorizacion, tipo_comprobante "
+    + (wantVal ? ", ce_xml " : " ")
     + "FROM ce_comprobante "
     + "WHERE (ruc_comprador = '" + req.params.cedula_ruc + "' "
     + "   OR ruc_comprador = SUBSTR('" + req.params.cedula_ruc + "',0,11) "
@@ -37,11 +39,13 @@ ctrl.get = (req, res) => {
     if (err) console.log(err);
     db.query(query, async (err, data) => {
       if (err) console.log(err);
-      // YA NO SE TIENE QUE RECORRER LOS XML PORQUE NO SE USAN AL MENOS QUE SEA NECESARIO
-      // await utilities.asyncForEach(data, async (i) => {
-      //   var xml = await utilities.asyncParseString(i.ce_xml);
-      //   i.val = utilities.getValorFromXml(xml);
-      // });
+      data = Array.isArray(data) ? data : [];
+      if (wantVal) {
+        await utilities.asyncForEach(data, async (i) => {
+          i.val = await utilities.getImporteTotalFromXml(i.ce_xml);
+          delete i.ce_xml;
+        });
+      }
       res.json(data);
       db.disconnect();
     });
@@ -51,6 +55,7 @@ ctrl.get = (req, res) => {
 ctrl.getLike = (req, res) => {
   const fecha = req.body.params.fecha_autorizacion
     ? 'fecha_autorizacion' : 'fecha_comprobante';
+  const wantVal = utilities.isTrue(req.body.val) || (req.body.params && utilities.isTrue(req.body.params.val));
   const connection = utilities.dbConnection(req.params.db);
   const query =
     "SELECT ce_id, " +
@@ -58,6 +63,7 @@ ctrl.getLike = (req, res) => {
     " nombre_comprador = web_clear_special(nombre_comprador), " +
     " fecha_comprobante, numero_comprobante,clave_acceso, " +
     " numero_autorizacion,fecha_autorizacion,tipo_comprobante " +
+    (wantVal ? ", ce_xml " : " ") +
     "FROM ce_comprobante " +
     "WHERE DATE(" + fecha + ") >= '" + req.params.start + "' " +
     " AND DATE(" + fecha + ") <= '" + req.params.end + "' " +
@@ -70,11 +76,13 @@ ctrl.getLike = (req, res) => {
     if (err) console.log(err);
     db.query(query, async (err, data) => {
       if (err) console.log(err);
-      // YA NO SE TIENE QUE RECORRER LOS XML PORQUE NO SE USAN AL MENOS QUE SEA NECESARIO
-      // await utilities.asyncForEach(data, async (i) => {
-      //   var xml = await utilities.asyncParseString(i.ce_xml);
-      //   i.val = utilities.getValorFromXml(xml);
-      // });
+      data = Array.isArray(data) ? data : [];
+      if (wantVal) {
+        await utilities.asyncForEach(data, async (i) => {
+          i.val = await utilities.getImporteTotalFromXml(i.ce_xml);
+          delete i.ce_xml; // no enviamos el XML pesado al navegador
+        });
+      }
       res.json(data);
       db.disconnect();
     });
@@ -112,7 +120,8 @@ ctrl.getXmlById = (req, res) => {
 ctrl.rideFactura = (req, res) => {
   var options = params.optionsRIDE;
 
-  parseString(req.body.xml, async (err, result) => {
+  parseString(utilities.sanitizeXml(req.body.xml), async (err, result) => {
+    if (err || !result) { console.error('RIDE: XML no procesable:', err && err.message ? err.message : err); return res.status(500).send(); }
     if (err) {
       console.error(err);
       return res.status(500).send();
@@ -142,24 +151,7 @@ ctrl.rideFactura = (req, res) => {
       factura.infoTributaria[0].ptoEmi[0]
     );
 
-    if (imgSrc) {
-      try {
-        const logoPath = path.normalize(imgSrc);
-        if (fs.existsSync(logoPath)) {
-          const logoBase64 = fs.readFileSync(logoPath).toString("base64");
-          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
-        } else {
-          console.warn("Logo no encontrado en ruta:", logoPath);
-          imgSrc = "";
-        }
-      } catch (err) {
-        console.error("Error leyendo logo:", err.message);
-        imgSrc = "";
-      }
-    } else {
-      console.log("No se encuentra logo");
-      imgSrc = "";
-    }
+    imgSrc = utilities.resolveLogoDataUri(imgSrc);
 
     var contribuyenteEspecial = factura.infoFactura[0].contribuyenteEspecial
       ? "CONTRIBUYENTE ESPECIAL: " + factura.infoFactura[0].contribuyenteEspecial[0]
@@ -703,7 +695,8 @@ ctrl.rideFactura = (req, res) => {
 
 ctrl.rideRetencion = (req, res) => {
   var options = params.optionsRIDE;
-  parseString(req.body.xml, async (err, result) => {
+  parseString(utilities.sanitizeXml(req.body.xml), async (err, result) => {
+    if (err || !result) { console.error('RIDE: XML no procesable:', err && err.message ? err.message : err); return res.status(500).send(); }
     var comprobanteRetencion = result.comprobanteRetencion;
     comprobanteRetencion.infoTributaria[0].ambiente[0] =
       comprobanteRetencion.infoTributaria[0].ambiente[0] == "1"
@@ -725,23 +718,7 @@ ctrl.rideRetencion = (req, res) => {
         comprobanteRetencion.infoTributaria[0].ptoEmi[0]
       );
     // imgSrc = path.normalize(imgSrc);
-    if (imgSrc) {
-      try {
-        const logoPath = path.normalize(imgSrc);
-        if (fs.existsSync(logoPath)) {
-          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
-        } else {
-          console.warn('Logo no encontrado en ruta:', logoPath);
-          imgSrc = '';
-        }
-      } catch (err) {
-        console.error('Error leyendo logo:', err.message);
-        imgSrc = '';
-      }
-    } else {
-      console.log('No se encuentra logo');
-    }
+    imgSrc = utilities.resolveLogoDataUri(imgSrc);
     //Generación de barcode clave de acceso
     let barcode = await utilities.getBarcode(
       comprobanteRetencion.infoTributaria[0].claveAcceso[0]
@@ -922,7 +899,8 @@ ctrl.rideRetencion = (req, res) => {
 
 ctrl.rideRetencion2 = (req, res) => {
   var options = params.optionsRIDE;
-  parseString(req.body.xml, async (err, result) => {
+  parseString(utilities.sanitizeXml(req.body.xml), async (err, result) => {
+    if (err || !result) { console.error('RIDE: XML no procesable:', err && err.message ? err.message : err); return res.status(500).send(); }
     var comprobanteRetencion = result.comprobanteRetencion;
     comprobanteRetencion.infoTributaria[0].ambiente[0] =
       comprobanteRetencion.infoTributaria[0].ambiente[0] == "1"
@@ -944,23 +922,7 @@ ctrl.rideRetencion2 = (req, res) => {
         comprobanteRetencion.infoTributaria[0].ptoEmi[0]
       );
     // imgSrc = path.normalize(imgSrc);
-    if (imgSrc) {
-      try {
-        const logoPath = path.normalize(imgSrc);
-        if (fs.existsSync(logoPath)) {
-          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
-        } else {
-          console.warn('Logo no encontrado en ruta:', logoPath);
-          imgSrc = '';
-        }
-      } catch (err) {
-        console.error('Error leyendo logo:', err.message);
-        imgSrc = '';
-      }
-    } else {
-      console.log('No se encuentra logo');
-    }
+    imgSrc = utilities.resolveLogoDataUri(imgSrc);
     //Generación de barcode clave de acceso
     let barcode = await utilities.getBarcode(
       comprobanteRetencion.infoTributaria[0].claveAcceso[0]
@@ -1147,7 +1109,8 @@ ctrl.rideRetencion2 = (req, res) => {
 
 ctrl.rideCredito = (req, res) => {
   var options = params.optionsRIDE;
-  parseString(req.body.xml, async (err, result) => {
+  parseString(utilities.sanitizeXml(req.body.xml), async (err, result) => {
+    if (err || !result) { console.error('RIDE: XML no procesable:', err && err.message ? err.message : err); return res.status(500).send(); }
     var notaCredito = result.notaCredito;
     notaCredito.infoTributaria[0].ambiente[0] =
       notaCredito.infoTributaria[0].ambiente[0] == "1"
@@ -1167,23 +1130,7 @@ ctrl.rideCredito = (req, res) => {
         notaCredito.infoTributaria[0].ptoEmi[0]
       );
     // imgSrc = path.normalize(imgSrc);
-    if (imgSrc) {
-      try {
-        const logoPath = path.normalize(imgSrc);
-        if (fs.existsSync(logoPath)) {
-          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
-        } else {
-          console.warn('Logo no encontrado en ruta:', logoPath);
-          imgSrc = '';
-        }
-      } catch (err) {
-        console.error('Error leyendo logo:', err.message);
-        imgSrc = '';
-      }
-    } else {
-      console.log('No se encuentra logo');
-    }
+    imgSrc = utilities.resolveLogoDataUri(imgSrc);
     var contribuyenteEspecial = notaCredito.infoNotaCredito[0]
       .contribuyenteEspecial
       ? notaCredito.infoNotaCredito[0].contribuyenteEspecial[0]
@@ -1373,7 +1320,8 @@ ctrl.rideCredito = (req, res) => {
 
 ctrl.rideDebito = (req, res) => {
   var options = params.optionsRIDE;
-  parseString(req.body.xml, async (err, result) => {
+  parseString(utilities.sanitizeXml(req.body.xml), async (err, result) => {
+    if (err || !result) { console.error('RIDE: XML no procesable:', err && err.message ? err.message : err); return res.status(500).send(); }
     var notaDebito = result.notaDebito;
     notaDebito.infoTributaria[0].ambiente[0] =
       notaDebito.infoTributaria[0].ambiente[0] == "1" ? "PRUEBA" : "PRODUCCIÓN";
@@ -1387,29 +1335,8 @@ ctrl.rideDebito = (req, res) => {
       // "../../public/img/" +
       utilities.getLogoByRuc(notaDebito.infoTributaria[0].ruc[0]);
     // imgSrc = path.normalize(imgSrc);
-    if (imgSrc) {
-      try {
-        const logoPath = path.normalize(imgSrc);
-        if (fs.existsSync(logoPath)) {
-          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
-        } else {
-          console.warn('Logo no encontrado en ruta:', logoPath);
-          imgSrc = '';
-        }
-      } catch (err) {
-        console.error('Error leyendo logo:', err.message);
-        imgSrc = '';
-      }
-    } else {
-      console.log('No se encuentra logo');
-    }
-    var canvas = Canvas.createCanvas();
-    JsBarcode(canvas, notaDebito.infoTributaria[0].claveAcceso[0], {
-      width: 4,
-      height: 40,
-      displayValue: false,
-    });
+    imgSrc = utilities.resolveLogoDataUri(imgSrc);
+    let barcode = await utilities.getBarcode(notaDebito.infoTributaria[0].claveAcceso[0]);
 
     var body =
       '<div id="pageContent"><center><table id="infoRide"><tr>' +
@@ -1459,7 +1386,7 @@ ctrl.rideDebito = (req, res) => {
       notaDebito.infoTributaria[0].claveAcceso[0] +
       "</td></tr>" +
       '<tr><td style="padding-left: 2em"><img src="' +
-      canvas.toDataURL("image/png") +
+      barcode +
       '" style="width: 30em" align:right ></img></td></tr></table>' +
       '<table id="infoCliente"><tr ><td style="font-weight:bold">Razón Social / Nombres y Apellidos: </td><td>' +
       notaDebito.infoNotaDebito[0].razonSocialComprador[0] +
@@ -1561,7 +1488,8 @@ ctrl.rideDebito = (req, res) => {
 
 ctrl.rideRemision = (req, res) => {
   var options = params.optionsRIDE;
-  parseString(req.body.xml, async (err, result) => {
+  parseString(utilities.sanitizeXml(req.body.xml), async (err, result) => {
+    if (err || !result) { console.error('RIDE: XML no procesable:', err && err.message ? err.message : err); return res.status(500).send(); }
     var guiaRemision = result.guiaRemision;
     guiaRemision.infoTributaria[0].ambiente[0] =
       guiaRemision.infoTributaria[0].ambiente[0] == "1"
@@ -1582,23 +1510,7 @@ ctrl.rideRemision = (req, res) => {
         guiaRemision.infoTributaria[0].ptoEmi[0]
       );
     // imgSrc = path.normalize(imgSrc);
-    if (imgSrc) {
-      try {
-        const logoPath = path.normalize(imgSrc);
-        if (fs.existsSync(logoPath)) {
-          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
-        } else {
-          console.warn('Logo no encontrado en ruta:', logoPath);
-          imgSrc = '';
-        }
-      } catch (err) {
-        console.error('Error leyendo logo:', err.message);
-        imgSrc = '';
-      }
-    } else {
-      console.log('No se encuentra logo');
-    }
+    imgSrc = utilities.resolveLogoDataUri(imgSrc);
     let barcode = await utilities.getBarcode(
       guiaRemision.infoTributaria[0].claveAcceso[0]
     );
@@ -1781,7 +1693,8 @@ ctrl.rideRemision = (req, res) => {
 
 ctrl.rideLiquidacion = (req, res) => {
   var options = params.optionsRIDE;
-  parseString(req.body.xml, async (err, result) => {
+  parseString(utilities.sanitizeXml(req.body.xml), async (err, result) => {
+    if (err || !result) { console.error('RIDE: XML no procesable:', err && err.message ? err.message : err); return res.status(500).send(); }
     var liquidacionCompra = result.liquidacionCompra;
     var ambiente =
       liquidacionCompra.infoTributaria[0].ambiente[0] == "1"
@@ -1803,23 +1716,7 @@ ctrl.rideLiquidacion = (req, res) => {
         liquidacionCompra.infoTributaria[0].ptoEmi[0]
       );
     // imgSrc = path.normalize(imgSrc);
-    if (imgSrc) {
-      try {
-        const logoPath = path.normalize(imgSrc);
-        if (fs.existsSync(logoPath)) {
-          const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-          imgSrc = `data:image/jpeg;base64,${logoBase64}`;
-        } else {
-          console.warn('Logo no encontrado en ruta:', logoPath);
-          imgSrc = '';
-        }
-      } catch (err) {
-        console.error('Error leyendo logo:', err.message);
-        imgSrc = '';
-      }
-    } else {
-      console.log('No se encuentra logo');
-    }
+    imgSrc = utilities.resolveLogoDataUri(imgSrc);
     //Parametrización de la leyenda del catastro
     var leyenda_catastro = utilities.getLeyendaCatastro(liquidacionCompra);
     //Fin

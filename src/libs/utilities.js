@@ -3,6 +3,7 @@ const Sybase = require('sybase');
 const lineReader = require('line-reader');
 const params = require('../libs/params');
 const fs = require('fs');
+const path = require('path');
 const schedule = require('node-schedule');
 const axios = require('axios')
 const nodemailer = require('nodemailer');
@@ -107,8 +108,8 @@ ctrl.getValorFromXml = (json) => {
 		case 'notaCredito': 
 			res = json.notaCredito?.infoNotaCredito[0]?.totalSinImpuestos[0];
 			break;
-		case 'notaDebito': 
-			res = json.notaDebito.infoNotaDebito.totalSinImpuestos[0];
+		case 'notaDebito':
+			res = json.notaDebito?.infoNotaDebito[0]?.totalSinImpuestos[0];
 			break;
 		case 'liquidacionCompra': 
 			res = json.liquidacionCompra.infoLiquidacionCompra[0].importeTotal[0]
@@ -415,6 +416,68 @@ ctrl.getLeyendaCatastro = (comprobante) => {
 	return leyenda_catastro;
 		
 }
+
+ctrl.isTrue = (v) => v === true || v === 1 || v === '1' || v === 'true' || v === 'on';
+
+
+ctrl.sanitizeXml = (xml) => {
+	if (xml === null || xml === undefined) return '';
+	let s = Buffer.isBuffer(xml) ? xml.toString('utf8') : String(xml);
+	s = s.replace(/^\uFEFF/, '');                                             // BOM
+	s = s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');  // caracteres de control (deja \t \n \r)
+	s = s.replace(/&(?!amp;|lt;|gt;|quot;|apos;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;');
+	s = s.trim();
+	const lt = s.indexOf('<');
+	if (lt > 0) s = s.slice(lt);                                               // basura antes del primer '<'
+	return s;
+};
+
+
+ctrl.safeParseXml = (xml) => new Promise((resolve) => {
+	try {
+		const clean = ctrl.sanitizeXml(xml);
+		if (!clean || clean[0] !== '<') return resolve(null);
+		parseString(clean, { explicitArray: true, trim: true }, (err, result) => {
+			if (err || !result) return resolve(null);
+			resolve(result);
+		});
+	} catch (e) {
+		resolve(null);
+	}
+});
+
+ctrl.getImporteTotalFromXml = async (xml) => {
+	try {
+		const result = await ctrl.safeParseXml(xml);
+		if (!result) return 0;
+		const v = ctrl.getValorFromXml(result);
+		const n = parseFloat(v);
+		return isNaN(n) ? 0 : n;
+	} catch (e) {
+		return 0;
+	}
+};
+
+ctrl.resolveLogoDataUri = (imgSrc) => {
+	if (imgSrc && /^data:/i.test(imgSrc)) return imgSrc; // ya es data URI
+	const candidatos = [];
+	if (imgSrc) {
+		candidatos.push(path.isAbsolute(imgSrc) ? path.normalize(imgSrc) : path.resolve(__dirname, '..', '..', imgSrc));
+	}
+	// Fallback: logo por defecto incluido en el proyecto
+	candidatos.push(path.resolve(__dirname, '..', 'public', 'img', 'logo_ce.jpg'));
+	for (const c of candidatos) {
+		try {
+			if (c && fs.existsSync(c)) {
+				const ext = path.extname(c).toLowerCase();
+				const mime = ext === '.png' ? 'image/png' : (ext === '.gif' ? 'image/gif' : 'image/jpeg');
+				return `data:${mime};base64,${fs.readFileSync(c).toString('base64')}`;
+			}
+		} catch (e) { /* intenta el siguiente candidato */ }
+	}
+	console.warn('No se pudo cargar ningún logo (ni el configurado ni el por defecto).');
+	return '';
+};
 
 ctrl.getDatabaseInfoByRuc = (ruc, estacion, punto) => {
 	var index = false;

@@ -38,7 +38,7 @@ ctrl.mail = (req = express.request, res) => {
     telefono = dataCE[0].telefono;
 
     // Creando pdf
-    const result = await parseString(dataCE[0].ce_xml);
+    const result = await parseString(utilities.sanitizeXml(dataCE[0].ce_xml));
 
     try {
       var tipo_comprobante = Object.keys(result)[0];
