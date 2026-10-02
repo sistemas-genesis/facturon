@@ -5,6 +5,10 @@
   "description": "API FacturON multiempresa (NestJS)",
   "license": "UNLICENSED",
   "type": "module",
+  "engines": {
+    "node": ">=22.12.0",
+    "npm": ">=10"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
