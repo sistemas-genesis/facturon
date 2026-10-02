@@ -1,0 +1,90 @@
+{
+  "slug": "mi-empresa",
+  "enabled": true,
+  "ruc": "1790000000001",
+  "nombreComercial": "MI EMPRESA S.A.",
+  "logLevel": "info",
+  "db": {
+    "host": "localhost",
+    "port": 4011,
+    "db": "mi_bd",
+    "user": "dba",
+    "pass": "cambiar-esta-clave"
+  },
+  "estacion": "001",
+  "punto": "001",
+  "mail": {
+    "host": "mail.midominio.com",
+    "port": 25,
+    "tls": {
+      "rejectUnauthorized": false
+    },
+    "auth": {
+      "user": "facturacion@midominio.com",
+      "pass": "cambiar-esta-clave"
+    }
+  },
+  "mailsDefault": {
+    "manual": false,
+    "mail": "copia@midominio.com"
+  },
+  "mailTask": {
+    "status": false,
+    "frequency": "*/3 * * * *",
+    "lastComprobantesDays": 3,
+    "top": 10
+  },
+  "firma": {
+    "path": "data/tenants/mi-empresa/firma.p12",
+    "pass": "cambiar-esta-clave",
+    "add": 730,
+    "avisar_desde_dia": 0
+  },
+  "logo": {
+    "path": "data/tenants/mi-empresa/logo.jpg",
+    "width": "50%",
+    "height": "auto"
+  },
+  "ride": {
+    "optionsRIDE": {
+      "format": "A4",
+      "orientation": "portrait"
+    },
+    "RIDE": {
+      "name": {
+        "codigoPrincipal": "COD.",
+        "cantidad": "CANT.",
+        "descripcion": "DESCRIPCION",
+        "precioUnitario": "PRECIO",
+        "descuento": "DESC.",
+        "precioTotal": "SUBTOTAL"
+      },
+      "optionalItems": {
+        "codigoAuxiliar": false,
+        "propina": {
+          "status": false,
+          "name": "SERVICIO"
+        }
+      }
+    }
+  },
+  "leyenda_catastro": {
+    "status": true,
+    "key": ".",
+    "size": 10,
+    "breakLine": "/"
+  },
+  "subsidio": {
+    "status": false,
+    "label": {
+      "subsidio": "Subsidio",
+      "precio_sin_subsidio": "P. Sin Subsidio",
+      "valor_total_sin_subsidio": "Valor Total Sin Subsidio",
+      "ahorro_subsidio": "Ahorro por Subsidio"
+    }
+  },
+  "whatsapp": {
+    "phoneNumberId": "00000000-0000-0000-0000-000000000000",
+    "baseUrl": "http://whatsapp.example.com:5822"
+  }
+}

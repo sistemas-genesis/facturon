@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<notaDebito id="comprobante" version="1.0.0">
+<infoTributaria><ambiente>2</ambiente><tipoEmision>1</tipoEmision><razonSocial>PITANOVA S.A.</razonSocial><nombreComercial>PITANOVA</nombreComercial><ruc>1490826722001</ruc><claveAcceso>0110202405149082672200120010010000001231234567814</claveAcceso><codDoc>05</codDoc><estab>001</estab><ptoEmi>001</ptoEmi><secuencial>000000123</secuencial><dirMatriz>AV. PRINCIPAL 123 Y SECUNDARIA</dirMatriz></infoTributaria>
+<infoNotaDebito><fechaEmision>01/10/2024</fechaEmision><dirEstablecimiento>CALLE 1</dirEstablecimiento><tipoIdentificacionComprador>05</tipoIdentificacionComprador><razonSocialComprador>JUAN PEREZ</razonSocialComprador><identificacionComprador>1234567890</identificacionComprador><obligadoContabilidad>SI</obligadoContabilidad><codDocModificado>01</codDocModificado><numDocModificado>001-001-000000045</numDocModificado><fechaEmisionDocSustento>01/09/2024</fechaEmisionDocSustento><totalSinImpuestos>10.00</totalSinImpuestos><impuestos><impuesto><codigo>2</codigo><codigoPorcentaje>4</codigoPorcentaje><tarifa>15</tarifa><baseImponible>10.00</baseImponible><valor>1.50</valor></impuesto></impuestos><valorTotal>11.50</valorTotal></infoNotaDebito>
+<motivos><motivo><razon>INTERES POR MORA</razon><valor>10.00</valor></motivo></motivos>
+</notaDebito>

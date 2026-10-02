@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<comprobanteRetencion id="comprobante" version="1.0.0">
+<infoTributaria><ambiente>2</ambiente><tipoEmision>1</tipoEmision><razonSocial>PITANOVA S.A.</razonSocial><nombreComercial>PITANOVA</nombreComercial><ruc>1490826722001</ruc><claveAcceso>0110202407149082672200120010010000001231234567816</claveAcceso><codDoc>07</codDoc><estab>001</estab><ptoEmi>001</ptoEmi><secuencial>000000123</secuencial><dirMatriz>AV. PRINCIPAL 123 Y SECUNDARIA</dirMatriz></infoTributaria>
+<infoCompRetencion><fechaEmision>01/10/2024</fechaEmision><dirEstablecimiento>CALLE 1</dirEstablecimiento><obligadoContabilidad>SI</obligadoContabilidad><tipoIdentificacionSujetoRetenido>04</tipoIdentificacionSujetoRetenido><razonSocialSujetoRetenido>PROVEEDOR SA</razonSocialSujetoRetenido><identificacionSujetoRetenido>1790000000001</identificacionSujetoRetenido><periodoFiscal>10/2024</periodoFiscal></infoCompRetencion>
+<impuestos><impuesto><codigo>1</codigo><codigoRetencion>312</codigoRetencion><baseImponible>100.00</baseImponible><porcentajeRetener>1.75</porcentajeRetener><valorRetenido>1.75</valorRetenido><codDocSustento>01</codDocSustento><numDocSustento>001001000000045</numDocSustento><fechaEmisionDocSustento>01/10/2024</fechaEmisionDocSustento></impuesto></impuestos>
+</comprobanteRetencion>
