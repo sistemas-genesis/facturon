@@ -87,6 +87,7 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
         },
         mailsDefault: { manual: false, mail: 'copia@pitanova.com' },
         whatsapp: { phoneNumberId: 'phone-1' },
+        // bloque legado: debe ignorarse sin invalidar el tenant
         firma: { path: '', pass: '', add: 730, avisar_desde_dia: 10 },
         leyenda_catastro: { status: true, key: '.', size: 10, breakLine: '/' },
       }),
@@ -418,7 +419,7 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
     });
   });
 
-  describe('Genesis / Uploader / Gasolinera / Params / Firma / Web', () => {
+  describe('Genesis / Uploader / Gasolinera / Params / Web', () => {
     it('genesis/ride genera el PDF (200 vacio); ride_blob devuelve el PDF en base64; sin registro -> 500', async () => {
       respond = () => [
         {
@@ -523,7 +524,6 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
         db: 'pita_nova',
         ruc: '1490826722001',
         empresa: 'PITANOVA S.A.',
-        avisar_desde_dia: 10,
         mailsDefault: { manual: false, mail: 'copia@pitanova.com' },
       });
       expect(JSON.stringify(emp.body)).not.toContain(SECRETO_DB);
@@ -540,27 +540,6 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
       });
       expect(JSON.stringify(ok.body)).not.toContain(SECRETO_DB);
       expect(JSON.stringify(ok.body)).not.toContain(SECRETO_MAIL);
-    });
-
-    it('firma: sin firma configurada -> 200 vacio; empresa inexistente -> 404; info con archivo invalido -> {success:false,msg}', async () => {
-      await http()
-        .get('/api/firma/fecha_caducidad/1490826722001')
-        .expect(200, '');
-      await http().get('/api/firma/fecha_caducidad/1799999999001').expect(404);
-      const bad = await http()
-        .post('/api/firma/info')
-        .send({ firma: 'data:x;base64,AAAA', pass: 'x' })
-        .expect(200);
-      expect(bad.body.success).toBe(false);
-      expect(typeof bad.body.msg).toBe('string');
-      const nofile = await http()
-        .post('/api/firma/info')
-        .send({ firma: 'sin-coma', pass: 'x' })
-        .expect(200);
-      expect(nofile.body).toEqual({
-        success: false,
-        msg: 'Archivo de firma invalido',
-      });
     });
 
     it('web: /config y cualquier otra ruta GET devuelven el front; estaticos servidos', async () => {

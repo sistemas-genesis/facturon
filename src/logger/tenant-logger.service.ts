@@ -40,7 +40,6 @@ const REDACT = [
   'xml',
   'ce_xml',
   'xml_autorizado',
-  'firma',
   'key',
   'req.headers.authorization',
   'req.headers["x-api-key"]',

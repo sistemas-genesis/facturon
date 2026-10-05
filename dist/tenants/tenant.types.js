@@ -29,14 +29,7 @@ export const tenantSchema = z
         .object({ manual: z.boolean(), mail: z.string() })
         .optional(),
     mailTask: mailTaskSchema.optional(),
-    firma: z
-        .object({
-        path: z.string().default(''),
-        pass: z.string().default(''),
-        add: z.number().default(0),
-        avisar_desde_dia: z.number().default(0),
-    })
-        .default({ path: '', pass: '', add: 0, avisar_desde_dia: 0 }),
+    firma: z.unknown().optional().transform(() => undefined),
     ride: z
         .object({
         optionsRIDE: z.record(z.unknown()).optional(),

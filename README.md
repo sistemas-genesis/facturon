@@ -4,7 +4,7 @@ Un solo proceso para todas las empresas. Reemplaza al Express legacy (`../genesi
 
 **Uso local, sin clientes externos.** Esta API no la llama ningun otro sistema: se levanta en la maquina y se conecta a las bases de datos de las distintas empresas. Escucha solo en `127.0.0.1` (`server.host` en el JSON), no tiene API keys, `/admin` ni rate limit.
 
-**Cada empresa es un JSON aislado** (`config/tenants/<slug>.json`) con todo lo suyo: BD, correo, firma, logo, WhatsApp, RIDE, tablas, etc. (como cada elemento de `params.databases[]` del original). La config global `config/app.config.json` es minima: `server` (host, puerto, carpetas, logs) y `defaults` (valores de negocio que toda empresa hereda si su JSON no los define: soap, genesisIp, tablas, whatsapp.baseUrl, SRI, mailTask, RIDE, plantilla de correo). El `.env` es opcional y solo sobrescribe `server`. Ver `CONFIGURACION.md`.
+**Cada empresa es un JSON aislado** (`config/tenants/<slug>.json`) con todo lo suyo: BD, correo, logo, WhatsApp, RIDE, tablas, etc. (como cada elemento de `params.databases[]` del original). La config global `config/app.config.json` es minima: `server` (host, puerto, carpetas, logs) y `defaults` (valores de negocio que toda empresa hereda si su JSON no los define: soap, genesisIp, tablas, whatsapp.baseUrl, SRI, mailTask, RIDE, plantilla de correo). El `.env` es opcional y solo sobrescribe `server`. Ver `CONFIGURACION.md`.
 
 ## Arranque
 ```bash
@@ -50,7 +50,6 @@ Un JSON por empresa en `config/tenants/<slug>.json` (el nombre del archivo **deb
   },
   "mailsDefault": { "manual": false, "mail": "copia@midominio.com" },
   "mailTask": { "status": false, "frequency": "*/3 * * * *", "lastComprobantesDays": 3, "top": 10 },
-  "firma": { "path": "data/tenants/mi-empresa/firma.p12", "pass": "cambiar-esta-clave", "add": 730, "avisar_desde_dia": 0 },
   "logo": { "path": "data/tenants/mi-empresa/logo.jpg", "width": "50%", "height": "auto" },
   "ride": {
     "optionsRIDE": { "format": "A4", "orientation": "portrait" },
@@ -90,12 +89,12 @@ Opcionalmente la empresa puede sobrescribir los `defaults` globales con `soap`, 
 
 - Obligatorios: `slug` (minúsculas, números, `_` o `-`; 2 a 63 caracteres, empieza con letra o número), `ruc` (10 a 13 caracteres), `nombreComercial`, y `db` con sus 5 campos `host`, `port`, `db`, `user`, `pass`.
 - Opcionales con valor por defecto: `enabled` (`true`), `estacion` (`""`), `punto` (`""`).
-- Opcionales sin valor por defecto: `logLevel` (`trace|debug|info|warn|error`), `mail`, `mailsDefault` (`{ manual: boolean, mail: string }`), `mailTask`, `firma`, `logo`, `ride`, `leyenda_catastro`, `subsidio`, `whatsapp` (`{ phoneNumberId, baseUrl }`), `soap`, `genesisIp`, `facturonURL`, `tables` (sobrescriben `defaults`).
+- Opcionales sin valor por defecto: `logLevel` (`trace|debug|info|warn|error`), `mail`, `mailsDefault` (`{ manual: boolean, mail: string }`), `mailTask`, `logo`, `ride`, `leyenda_catastro`, `subsidio`, `whatsapp` (`{ phoneNumberId, baseUrl }`), `soap`, `genesisIp`, `facturonURL`, `tables` (sobrescriben `defaults`).
 - No se aceptan campos desconocidos: el archivo se rechaza (se conserva la versión válida anterior, si existía).
 - El esquema real está en `src/tenants/tenant.types.ts`; el ejemplo se valida con `npm test` (`src/tenants/tenant.types.spec.ts`).
 
 ## Modulos (`src/`)
-`config` (JSON tipado con zod: `APP_JSON`, `APP_CONFIG`) · `tenants` (registro, guard por `:db`, contexto, `TenantSettings` = defaults + JSON de la empresa) · `logger` (pino por empresa + auditoria `operation()/audited()`) · `database` (driver Sybase inyectable `DbDriver`, helpers SQL seguros) · `documentos` · `ride` (PDF pdfmake, 7 tipos) · `mail` (correo, WhatsApp, tarea programada) · `genesis` · `uploader` (SRI SOAP -> tablas temp) · `gasolinera` · `params` · `pdf` · `firma` (openssl) · `web` (front estatico en `public/`).
+`config` (JSON tipado con zod: `APP_JSON`, `APP_CONFIG`) · `tenants` (registro, guard por `:db`, contexto, `TenantSettings` = defaults + JSON de la empresa) · `logger` (pino por empresa + auditoria `operation()/audited()`) · `database` (driver Sybase inyectable `DbDriver`, helpers SQL seguros) · `documentos` · `ride` (PDF pdfmake, 7 tipos) · `mail` (correo, WhatsApp, tarea programada) · `genesis` · `uploader` (SRI SOAP -> tablas temp) · `gasolinera` · `params` · `pdf` · `web` (front estatico en `public/`).
 
 ## Logs por empresa
 `logs/<slug>/app-YYYY-MM-DD.log` (todo) y `error-YYYY-MM-DD.log` (solo errores, con stack); `logs/_system/` para eventos globales.
@@ -106,7 +105,7 @@ Cada operacion de negocio queda como `event: "empresa.operacion"` con `empresaRu
 - En codigo: inyectar `TenantLoggerService` y usar `logger.info('msg', {..})`; escribe en el log de la empresa del request/tarea actual.
 
 ## Seleccion de empresa (`TenantGuard`)
-Un unico selector, como el original: el parametro `:db` de la ruta (`/api/.../:db/...`) es el nombre de la BD de la empresa. Las rutas por RUC (`/api/documento/ride/*`, firma) eligen la empresa por el RUC del XML/ruta. Empresa inexistente, deshabilitada o `:db` ambiguo (mismo nombre de BD en dos empresas) => 404. Cada empresa usa solo su JSON: su BD, su correo, su firma y su logo; lo que no define lo toma de `defaults`, nunca de otra empresa.
+Un unico selector, como el original: el parametro `:db` de la ruta (`/api/.../:db/...`) es el nombre de la BD de la empresa. Las rutas por RUC (`/api/documento/ride/*`) eligen la empresa por el RUC del XML/ruta. Empresa inexistente, deshabilitada o `:db` ambiguo (mismo nombre de BD en dos empresas) => 404. Cada empresa usa solo su JSON: su BD, su correo y su logo; lo que no define lo toma de `defaults`, nunca de otra empresa.
 
 ## Scripts
 `npm run build`, `npm run start:dev`, `npm run lint` (oxlint), `npm run format` (prettier), `npm test` (unitarios, vitest), `npm run test:e2e` (aislamiento por empresa + paridad funcional de todas las rutas, vitest).

@@ -7,7 +7,7 @@ Igual que `genesis-facturon` (donde cada elemento de `params.databases[]` es una
 | Nivel | Dónde | Qué controla | ¿Reinicia el proceso? |
 |---|---|---|---|
 | Global (mínimo) | `config/app.config.json` | `server` (host, puerto, carpetas, logs) y `defaults` (valores de negocio compartidos que toda empresa hereda) | Sí |
-| Por empresa | `config/tenants/<slug>.json` | Todo lo de la empresa: BD, correo, firma, logo, WhatsApp, RIDE, tablas, soap, etc. Puede sobrescribir cualquier `defaults` | **No** (recarga sola) |
+| Por empresa | `config/tenants/<slug>.json` | Todo lo de la empresa: BD, correo, logo, WhatsApp, RIDE, tablas, soap, etc. Puede sobrescribir cualquier `defaults` | **No** (recarga sola) |
 
 Regla práctica: si el dato es de una empresa, va en su JSON; si es igual para todas (catálogos SRI, plantilla de correo, URL del SRI), va en `defaults`.
 `.env` es **opcional**: una variable de entorno, si existe, sobrescribe la sección `server`.
@@ -87,7 +87,6 @@ Si una variable o un campo del JSON es inválido, el proceso no arranca y dice c
 | `mail` | — | Transporte nodemailer (SMTP u OAuth2), ver abajo |
 | `mailsDefault` | — | `{ "manual": false, "mail": "copia@empresa.com" }` |
 | `mailTask` | — | Parámetros del envío automático, ver abajo |
-| `firma` | — | `{ "path", "pass", "add", "avisar_desde_dia" }` |
 | `logo` | — | `{ "path", "width", "height" }` |
 | `ride` | — | `optionsRIDE`, `RIDE` (rótulos y columnas) y `mailTemplate` |
 | `leyenda_catastro` | — | `{ "status", "key", "size", "breakLine" }` |
@@ -95,8 +94,8 @@ Si una variable o un campo del JSON es inválido, el proceso no arranca y dice c
 | `whatsapp` | — | `{ "phoneNumberId": "...", "baseUrl": "..." }` (`baseUrl` opcional, si no usa `defaults`) |
 | `soap`, `genesisIp`, `facturonURL`, `tables` | `defaults` | Sobrescriben el valor global solo para esta empresa |
 
-> Estos bloques ya los consumen los módulos: `mail`/`mailsDefault`/`whatsapp` (correo y WhatsApp), `firma` (caducidad), `logo`/`ride`/`subsidio`/`leyenda_catastro` (RIDE) y `mailTask` (envío automático). Lo que la empresa define (`ride`, `mailTask`, `tables`, `soap`, `genesisIp`, `facturonURL`, `whatsapp.baseUrl`) reemplaza al `defaults` de `app.config.json` solo para ella; si no lo define, hereda el global. Esa mezcla se hace en un único lugar (`TenantSettings`).
-> `firma.path` y `logo.path` se resuelven respecto al directorio desde el que se inicia el proceso.
+> Estos bloques ya los consumen los módulos: `mail`/`mailsDefault`/`whatsapp` (correo y WhatsApp), `logo`/`ride`/`subsidio`/`leyenda_catastro` (RIDE) y `mailTask` (envío automático). Lo que la empresa define (`ride`, `mailTask`, `tables`, `soap`, `genesisIp`, `facturonURL`, `whatsapp.baseUrl`) reemplaza al `defaults` de `app.config.json` solo para ella; si no lo define, hereda el global. Esa mezcla se hace en un único lugar (`TenantSettings`).
+> `logo.path` se resuelven respecto al directorio desde el que se inicia el proceso.
 
 Un campo desconocido hace que el archivo sea rechazado (evita errores de tipeo como `nombreComerical`).
 
@@ -139,7 +138,6 @@ Es el mismo de `config/tenants/example.json.sample` y de la sección "Ejemplo de
   },
   "mailsDefault": { "manual": false, "mail": "copia@midominio.com" },
   "mailTask": { "status": false, "frequency": "*/3 * * * *", "lastComprobantesDays": 3, "top": 10 },
-  "firma": { "path": "data/tenants/mi-empresa/firma.p12", "pass": "cambiar-esta-clave", "add": 730, "avisar_desde_dia": 0 },
   "logo": { "path": "data/tenants/mi-empresa/logo.jpg", "width": "50%", "height": "auto" },
   "ride": {
     "optionsRIDE": { "format": "A4", "orientation": "portrait" },
@@ -191,12 +189,12 @@ Para **desactivar** una empresa: `"enabled": false`. Para **quitarla**: borrar s
 
 ## 4. Cómo se identifica la empresa en cada request
 
-Un único selector, como en el original: **`:db`** (nombre de la BD de la empresa) en las rutas `/api/.../:db/...`. Las rutas que traen el RUC (`/api/documento/ride/*` por el RUC del XML, `/api/firma/*/:ruc`) eligen a la empresa dueña de ese RUC (con `estacion`/`punto` como desempate, igual que el legacy).
+Un único selector, como en el original: **`:db`** (nombre de la BD de la empresa) en las rutas `/api/.../:db/...`. Las rutas que traen el RUC (`/api/documento/ride/*` por el RUC del XML) eligen a la empresa dueña de ese RUC (con `estacion`/`punto` como desempate, igual que el legacy).
 
 Reglas:
 - Inexistente o deshabilitada → **404** genérico.
 - Dos empresas con el mismo nombre de BD → `:db` es ambiguo y responde **404** (no se adivina). Usar nombres de BD distintos o dejar una sola habilitada.
-- Aislamiento: cada empresa usa **solo su JSON** (su BD, correo, firma, logo, WhatsApp, tablas, log). Lo que no define lo toma de `defaults`, nunca del JSON de otra. Cada una escribe únicamente en `logs/<slug>/`.
+- Aislamiento: cada empresa usa **solo su JSON** (su BD, correo, logo, WhatsApp, tablas, log). Lo que no define lo toma de `defaults`, nunca del JSON de otra. Cada una escribe únicamente en `logs/<slug>/`.
 - No hay `X-Api-Key`, `X-Tenant` ni `:tenant`: se eliminaron.
 
 ---
@@ -218,13 +216,13 @@ Cada línea es un JSON:
 {"level":30,"time":"2026-09-30T10:15:02.123Z","tenant":"pita_nova","event":"http.request","requestId":"…","method":"GET","path":"/api/…","status":200,"ms":42,"msg":"request"}
 ```
 
-**Qué empresa envía cada documento.** Cada operación de negocio (correo, WhatsApp, RIDE, consulta, uploader, firma, tarea automática) deja una línea `event: "empresa.operacion"` en el log de la empresa que la ejecuta (la dueña del RUC emisor del XML para correo/RIDE; la de `:db` para el resto):
+**Qué empresa envía cada documento.** Cada operación de negocio (correo, WhatsApp, RIDE, consulta, uploader, tarea automática) deja una línea `event: "empresa.operacion"` en el log de la empresa que la ejecuta (la dueña del RUC emisor del XML para correo/RIDE; la de `:db` para el resto):
 
 ```json
 {"level":30,"time":"2026-10-02T16:16:15.224Z","tenant":"pita_nova","event":"empresa.operacion","empresaRuc":"1490826722001","empresaNombre":"PITANOVA S.A.","accion":"mail.enviar","resultado":"ok","requestId":"8378985e-daf4-4ec6-be86-7c375b5d49e8","ceId":"10","tipo":"factura","comprobante":"001-001-000000123","baseDatos":"pita_nova","destinatarios":2,"ms":19,"messageId":"<abc@x>","msg":"[PITANOVA S.A. | RUC 1490826722001] mail.enviar -> ok"}
 ```
 
-`resultado` es `ok`, `error` (también en `error-*.log` con stack) u `omitido`. Las tareas automáticas usan `correlationId` (una pasada = un id). Acciones: `documentos.buscar|buscarTodos|xmlPorId`, `ride.<tipo>`, `mail.enviar`, `whatsapp.token|enviar|comprobante`, `genesis.ride|ride_blob`, `uploader.compra|compraIndividual|ventaIndividual`, `gasolinera.persona`, `firma.fecha_caducidad`, `mailtask.consulta|comprobante`. Los destinatarios no se escriben en el log (solo su cantidad), ni el contenido de los XML.
+`resultado` es `ok`, `error` (también en `error-*.log` con stack) u `omitido`. Las tareas automáticas usan `correlationId` (una pasada = un id). Acciones: `documentos.buscar|buscarTodos|xmlPorId`, `ride.<tipo>`, `mail.enviar`, `whatsapp.token|enviar|comprobante`, `genesis.ride|ride_blob`, `uploader.compra|compraIndividual|ventaIndividual`, `gasolinera.persona`, `mailtask.consulta|comprobante`. Los destinatarios no se escriben en el log (solo su cantidad), ni el contenido de los XML.
 
 Los campos `pass`, `password`, `token`, `apiKey`, `clientSecret`, `refreshToken` y `authorization` (hasta dos niveles de anidación) salen como `[REDACTED]`. Un JSON de empresa con sintaxis inválida se reporta solo como `JSON invalido` (sin citar su contenido, que puede traer credenciales).
 
@@ -249,10 +247,9 @@ Mismas rutas, entradas y formatos que el Express original; las rutas con `:db` p
 | `GET /api/params/empresas`, `/api/params/publicip` | JSON |
 | `GET /api/params/config` | 200 config para el panel `/config` (sin clave, solo lectura; contraseñas siempre enmascaradas). Reemplaza a `/api/params/login/:key` (eliminada) |
 | `GET /health` | Estado y cantidad de empresas |
-| `GET /api/firma/fecha_caducidad/:ruc`, `POST /api/firma/info` body `{firma,pass}` | texto con los días / `{success,data\|msg}` |
 | `GET /config`, `GET *` | front (`public/config.html`, `public/index.html`) |
 
-Requiere `openssl` en el PATH (firma) y Java (driver Sybase `node-sybase`) en el servidor, igual que el original.
+Requiere Java (driver Sybase `node-sybase`) en el servidor, igual que el original.
 
 ## 7. Carpetas recomendadas en el servidor Windows
 
@@ -261,7 +258,7 @@ C:\facturon\nest\
 ├── config\app.config.json
 ├── public\                                       (front estático)
 ├── config\tenants\*.json
-├── data\tenants\<slug>\logo.jpg , firma.p12     (rutas relativas en el JSON)
+├── data\tenants\<slug>\logo.jpg      (rutas relativas en el JSON)
 └── logs\<slug>\...
 ```
 

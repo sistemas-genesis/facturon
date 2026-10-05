@@ -70,7 +70,6 @@ app.controller('main', ($scope, $http,  $window) =>
 
 	}
 	$http.get('/api/params/empresas').success(async res => {
-		var rucs = []
 		$scope.empresas = res;
 
 		var publicip = '';
@@ -78,8 +77,6 @@ app.controller('main', ($scope, $http,  $window) =>
 		res.forEach(i=>{
 			publicip = i.publicip;
 			$scope.datum.empresa.push(i)
-			if (rucs.indexOf(i.ruc) == -1)
-				rucs.push(i.ruc)
 		})
 
 
@@ -94,16 +91,7 @@ app.controller('main', ($scope, $http,  $window) =>
 		setTimeout(() => {
 	    	$('select').material_select();
 	    }, 200);
-		await asyncForEach(rucs, (async i => {
-			let res = await $http.get('/api/firma/fecha_caducidad/'+i)
-			if (res.status == 200){
-				if (parseInt(res.data) < $scope.empresas[getIndex($scope.empresas, 'ruc', i)].avisar_desde_dia && parseInt(res.data) > -1)
-					Materialize.toast('La firma de '+$scope.empresas[getIndex($scope.empresas, 'ruc', i)].empresa + ' caducará en ' + res.data + ' días', 3000, 'orange')
-				else if (parseInt(res.data) < 0)
-					Materialize.toast('La firma de '+$scope.empresas[getIndex($scope.empresas, 'ruc', i)].empresa + ' caducó hace ' + (res.data * -1) + ' días', 3000, 'red')
-			}
-		}))
-	    
+   
 	})
 	.error(() => {
 		Materialize.toast('Error de conexión', 1000, 'red')

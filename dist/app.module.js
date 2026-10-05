@@ -13,7 +13,6 @@ import { LoggingInterceptor } from './common/logging.interceptor.js';
 import { AppConfigModule } from './config/config.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { DocumentosModule } from './documentos/documentos.module.js';
-import { FirmaModule } from './firma/firma.module.js';
 import { GasolineraModule } from './gasolinera/gasolinera.module.js';
 import { GenesisModule } from './genesis/genesis.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -53,7 +52,6 @@ AppModule = __decorate([
             GasolineraModule,
             ParamsModule,
             PdfModule,
-            FirmaModule,
             WebModule,
         ],
         providers: [

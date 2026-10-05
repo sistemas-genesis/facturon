@@ -44,15 +44,8 @@ export const tenantSchema = z
       .optional(),
     /** Si se define, reemplaza al mailTask global de app.config.json. */
     mailTask: mailTaskSchema.optional(),
-    firma: z
-      .object({
-        path: z.string().default(''),
-        pass: z.string().default(''),
-        /** dias que se suman a la caducidad calculada */
-        add: z.number().default(0),
-        avisar_desde_dia: z.number().default(0),
-      })
-      .default({ path: '', pass: '', add: 0, avisar_desde_dia: 0 }),
+    /** Bloque legado de firma electronica: ya no se usa; se acepta y se descarta para no invalidar JSON antiguos (schema estricto). */
+    firma: z.unknown().optional().transform(() => undefined),
     /** Reemplazos puntuales del RIDE/mail global (si no, se usa app.config.json). */
     ride: z
       .object({

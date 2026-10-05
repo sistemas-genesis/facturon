@@ -58,7 +58,7 @@ export type TablesConfig = z.infer<typeof tablesSchema>;
  * - `server`: lo que es del proceso (host, puerto, carpetas, logs). Nada de empresas.
  * - `defaults`: valores de negocio que TODA empresa hereda si su JSON no los define
  *   (soap, genesisIp, tablas, whatsapp, mailTask, RIDE, plantilla de correo y catalogos SRI).
- * Todo lo propio de una empresa (BD, mail, firma, logo, whatsapp...) vive en
+ * Todo lo propio de una empresa (BD, mail, logo, whatsapp...) vive en
  * config/tenants/<slug>.json y puede sobrescribir cualquiera de los `defaults`.
  */
 export const appJsonSchema = z

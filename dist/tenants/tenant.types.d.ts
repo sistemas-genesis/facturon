@@ -77,22 +77,7 @@ export declare const tenantSchema: z.ZodObject<{
         lastComprobantesDays: number;
         top: number;
     }>>;
-    firma: z.ZodDefault<z.ZodObject<{
-        path: z.ZodDefault<z.ZodString>;
-        pass: z.ZodDefault<z.ZodString>;
-        add: z.ZodDefault<z.ZodNumber>;
-        avisar_desde_dia: z.ZodDefault<z.ZodNumber>;
-    }, "strip", z.ZodTypeAny, {
-        path: string;
-        pass: string;
-        add: number;
-        avisar_desde_dia: number;
-    }, {
-        path?: string | undefined;
-        pass?: string | undefined;
-        add?: number | undefined;
-        avisar_desde_dia?: number | undefined;
-    }>>;
+    firma: z.ZodEffects<z.ZodOptional<z.ZodUnknown>, undefined, unknown>;
     ride: z.ZodOptional<z.ZodObject<{
         optionsRIDE: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         RIDE: z.ZodOptional<z.ZodObject<{
@@ -359,12 +344,6 @@ export declare const tenantSchema: z.ZodObject<{
         movimiento: string;
     }>>;
 }, "strict", z.ZodTypeAny, {
-    firma: {
-        path: string;
-        pass: string;
-        add: number;
-        avisar_desde_dia: number;
-    };
     slug: string;
     enabled: boolean;
     ruc: string;
@@ -446,6 +425,7 @@ export declare const tenantSchema: z.ZodObject<{
         mail: string;
         manual: boolean;
     } | undefined;
+    firma?: undefined;
     leyenda_catastro?: {
         status: boolean;
         key: string;
@@ -514,12 +494,6 @@ export declare const tenantSchema: z.ZodObject<{
         } | undefined;
         mailTemplate?: string | undefined;
     } | undefined;
-    firma?: {
-        path?: string | undefined;
-        pass?: string | undefined;
-        add?: number | undefined;
-        avisar_desde_dia?: number | undefined;
-    } | undefined;
     enabled?: boolean | undefined;
     estacion?: string | undefined;
     punto?: string | undefined;
@@ -536,6 +510,7 @@ export declare const tenantSchema: z.ZodObject<{
         mail: string;
         manual: boolean;
     } | undefined;
+    firma?: unknown;
     leyenda_catastro?: {
         status: boolean;
         key: string;

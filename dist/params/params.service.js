@@ -38,7 +38,6 @@ let ParamsService = class ParamsService {
             empresa: t.nombreComercial,
             estacion: t.estacion,
             punto: t.punto,
-            avisar_desde_dia: t.firma.avisar_desde_dia,
             mailsDefault: t.mailsDefault,
             publicip: this.publicIp.ip,
         }));
@@ -92,7 +91,6 @@ let ParamsService = class ParamsService {
             mailsDefault: t.mailsDefault,
             estacion: t.estacion,
             punto: t.punto,
-            firma: { ...t.firma, pass: hide(t.firma.pass) },
             leyenda_catastro: t.leyenda_catastro,
             subsidio: t.subsidio,
             phoneNumerId: t.whatsapp?.phoneNumberId,

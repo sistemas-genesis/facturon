@@ -9,7 +9,6 @@ export declare class ParamsController {
         empresa: string;
         estacion: string;
         punto: string;
-        avisar_desde_dia: number;
         mailsDefault: {
             mail: string;
             manual: boolean;

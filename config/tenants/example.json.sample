@@ -34,12 +34,6 @@
     "lastComprobantesDays": 3,
     "top": 10
   },
-  "firma": {
-    "path": "data/tenants/mi-empresa/firma.p12",
-    "pass": "cambiar-esta-clave",
-    "add": 730,
-    "avisar_desde_dia": 0
-  },
   "logo": {
     "path": "data/tenants/mi-empresa/logo.jpg",
     "width": "50%",

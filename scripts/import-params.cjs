@@ -34,7 +34,6 @@ for (const d of params.databases || []) {
     punto: d.punto || '',
     mail: d.mail,
     mailsDefault: d.mailsDefault,
-    firma: d.firma,
     leyenda_catastro: d.leyenda_catastro,
     subsidio: d.subsidio,
     logo: { path: d.img, width: d.imgWidth, height: d.imgHeight },

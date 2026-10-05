@@ -2,3 +2,10 @@ node_modules/
 test.html
 .env
 package-lock.json
+
+# Tenants: solo se versiona el .sample
+config/tenants/*
+!config/tenants/*.sample
+
+# Datos de tenants (imagenes, etc.)
+data/
