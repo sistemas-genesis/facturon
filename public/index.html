@@ -65,7 +65,7 @@
           <label for="end" class="active">Hasta</label>
         </div>
 		<div class="input-field col s12 m4">
-			<select id="empresa" ng-model="datum.empresa" ng-options="i.empresa for i in empresas track by (i.db + '|' + i.ruc + '|' + i.estacion + '|' + i.punto + '|' + i.empresa)" multiple required> </select>
+			<select id="empresa" ng-model="datum.empresa" ng-options="i.empresa for i in empresas track by i.slug" multiple required> </select>
 			<label for="empresa" class="active select-label">Empresa</label>
 		</div>
 		<div class="input-field col s6 m4">

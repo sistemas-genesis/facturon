@@ -22,7 +22,9 @@ export class ParamsService {
       .list()
       .filter((t) => t.enabled)
       .map((t) => ({
+        slug: t.slug,
         db: t.db.db,
+        host: t.db.host,
         ruc: t.ruc,
         img: t.logo?.path,
         empresa: t.nombreComercial,
