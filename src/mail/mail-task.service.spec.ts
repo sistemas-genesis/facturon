@@ -78,7 +78,7 @@ describe('MailTaskService.tick (utilities.task del legacy)', () => {
     );
   });
 
-  it('sin correo en el comprobante => se marca como enviado', async () => {
+  it('sin correo en el comprobante => enviar() sin correos (solo WhatsApp) que lo marca enviado', async () => {
     const sinMail = xml('factura.xml').replace(
       /<infoAdicional>.*<\/infoAdicional>/s,
       '',
@@ -88,8 +88,12 @@ describe('MailTaskService.tick (utilities.task del legacy)', () => {
       async () => undefined,
     );
     await svc.tick('pita', cfg);
-    expect(mail.enviar).not.toHaveBeenCalled();
-    expect(mail.markSent).toHaveBeenCalledWith(expect.anything(), 8);
+    expect(mail.enviar).toHaveBeenCalledWith(
+      expect.anything(),
+      '8',
+      '',
+      expect.anything(),
+    );
   });
 
   it('si el envio falla se marca enviado (igual que el legacy) y se sigue con el siguiente', async () => {

@@ -121,8 +121,14 @@ export class MailTaskService implements OnModuleInit, OnModuleDestroy {
     }
     let to = getMailFromXml(result[root]);
     if (!to) {
-      // sin correo en el comprobante: se marca como enviado para no reintentarlo
-      await this.mail.markSent(tenant, row.ce_id);
+      // sin correo: no hay correo que enviar, pero si WhatsApp (enviar lo omite y marca email = 1)
+      try {
+        await this.mail.enviar(tenant, String(row.ce_id), '', {
+          correlationId,
+        });
+      } catch {
+        await this.mail.markSent(tenant, row.ce_id);
+      }
       this.logger.operation(tenant, 'mailtask.comprobante', 'omitido', {
         ...meta,
         motivo: 'comprobante sin correo del cliente',

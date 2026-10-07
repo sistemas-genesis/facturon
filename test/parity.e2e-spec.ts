@@ -341,7 +341,7 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
 
     it('GET /api/mail/:db/:ce_id/:mails envia correo con PDF+XML, WhatsApp y marca email = 1', async () => {
       respond = (sql) => (sql.includes('SELECT') ? [rowFactura()] : []);
-      const fetchMock = vi.fn(async (url: string) =>
+      const fetchMock = vi.fn(async (url: string, _init?: any) =>
         url.includes('/phones/token/')
           ? { ok: true, json: async () => ({ token: 'tok-wa' }) }
           : { ok: true, json: async () => ({}) },
@@ -411,6 +411,45 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
         Object.assign(new Error('bad'), { responseCode: 501 }),
       );
       await http().get('/api/mail/pita_nova/13/a@b.com').expect(200);
+    });
+
+    it('GET /api/whatsapp/:db/:ce_id envia SOLO WhatsApp (sin correo ni UPDATE email)', async () => {
+      respond = (sql) => (sql.includes('SELECT') ? [rowFactura()] : []);
+      sendMail.mockClear();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (url: string) =>
+          url.includes('/phones/token/')
+            ? { ok: true, json: async () => ({ token: 'tok-wa' }) }
+            : { ok: true, status: 201, json: async () => ({}) },
+        ),
+      );
+      await http().get('/api/whatsapp/pita_nova/10').expect(200);
+      expect(sendMail).not.toHaveBeenCalled();
+      expect(queries.some((q) => q.includes('UPDATE'))).toBe(false);
+    });
+
+    it('WhatsApp solo: token expirado (401) -> 424 con mensaje util; el telefono invalido -> 422', async () => {
+      respond = (sql) => (sql.includes('SELECT') ? [rowFactura()] : []);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (url: string) =>
+          url.includes('/phones/token/')
+            ? { ok: true, json: async () => ({ token: 'vencido' }) }
+            : {
+                ok: false,
+                status: 401,
+                json: async () => ({ message: 'Token expirado' }),
+              },
+        ),
+      );
+      const r = await http().get('/api/whatsapp/pita_nova/10').expect(424);
+      expect(JSON.stringify(r.body)).toContain('token de WhatsApp');
+      respond = (sql) =>
+        sql.includes('SELECT')
+          ? [{ ...rowFactura(), telefono: '022345678' }]
+          : [];
+      await http().get('/api/whatsapp/pita_nova/10').expect(422);
     });
 
     it('rechaza ce_id no numerico (400) sin tocar la BD', async () => {

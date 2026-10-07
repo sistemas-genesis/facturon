@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CurrentTenant } from '../tenants/current-tenant.decorator.js';
 import { TenantGuard } from '../tenants/tenant.guard.js';
@@ -19,5 +19,22 @@ export class MailController {
     @Param('mails') mails: string,
   ): Promise<void> {
     await this.mail.enviar(tenant, ceId, mails);
+  }
+}
+
+@ApiTags('WhatsApp')
+@Controller('api/whatsapp')
+@UseGuards(TenantGuard)
+export class WhatsAppController {
+  constructor(private readonly mail: MailService) {}
+
+  /** Envia el comprobante ce_id SOLO por WhatsApp (sin correo). `?phone=` opcional. 200 vacio o error con mensaje. */
+  @Get(':db/:ce_id')
+  async whatsapp_(
+    @CurrentTenant() tenant: Tenant,
+    @Param('ce_id') ceId: string,
+    @Query('phone') phone?: string,
+  ): Promise<void> {
+    await this.mail.enviarWhatsApp(tenant, ceId, phone);
   }
 }

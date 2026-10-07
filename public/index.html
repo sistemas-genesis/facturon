@@ -101,6 +101,7 @@
 						<th>XML</th>
 						<th>RIDE</th>
 						<th>RENVIAR</th>
+						<th>WHATSAPP</th>
 					</tr>
 				</thead>
 				
@@ -114,13 +115,14 @@
 						<td><button class="btn waves-effect waves-light green" style="padding-left: 1em;padding-right: 1em; margin: 0.2em" ng-click="downloadXML($index)"><i class="material-icons center " >file_download</i></button></td>
 						<td><button class="btn waves-effect waves-light orange" style="padding-left: 1em;padding-right: 1em; margin: 0.2em" ng-click="downloadPDF($index)"><i class="material-icons center ">picture_as_pdf</i></button></td>
 						<td><button class="btn waves-effect waves-light blue" ng-click="openMail($index)" style="padding-left: 1em;padding-right: 1em; margin: 0.2em" ><i class="material-icons center ">mail_outline</i></button></td>
+						<td><button class="btn waves-effect waves-light teal" ng-click="sendWhatsApp($index)" ng-disabled="i.waSending" title="Enviar solo por WhatsApp" style="padding-left: 1em;padding-right: 1em; margin: 0.2em" ><i class="material-icons center ">chat</i></button></td>
 					</tr>
 				</tbody>
 				<tfoot ng-show="datum.val">
 					<tr>
 						<td colspan="4"style="text-align: center; font-weight: bold">T O T A L : </td>
 						<td style="text-align: right; font-weight: bold">{{total | number : 2}}</td>
-						<td colspan="3"></td>
+						<td colspan="4"></td>
 					</tr>
 				</tfoot>
 				

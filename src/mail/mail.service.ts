@@ -17,7 +17,7 @@ import { TenantRegistry } from '../tenants/tenant-registry.service.js';
 import { TenantSettings } from '../tenants/tenant-settings.service.js';
 import type { Tenant } from '../tenants/tenant.types.js';
 import { RideService } from '../ride/ride.service.js';
-import { WhatsAppService } from './whatsapp.service.js';
+import { WhatsAppService, type WhatsAppResult } from './whatsapp.service.js';
 
 export interface EnvioContext {
   /** Id para correlacionar los registros de una misma ejecucion (tarea programada). */
@@ -49,10 +49,7 @@ export class MailService {
   ): Promise<void> {
     const id = sqlInt(ceId, 'ce_id');
     const corr = ctx.correlationId ? { correlationId: ctx.correlationId } : {};
-    const query = `SELECT ce_xml,fecha_autorizacion, numero_autorizacion, xml_autorizado, web_clear_special(nombre_comprador) nombre_comprador,
-    empresa,
-    (case when ce_comprobante.tipo_comprobante='FV' OR ce_comprobante.tipo_comprobante='NC' OR ce_comprobante.tipo_comprobante='GR'  then  (SELECT first cl.telefono  FROM in_cliente  cl WHERE cl.cedula_ruc = ruc_comprador AND cl.empresa = ce_comprobante.empresa  ) else (SELECT first LEFT(pl.telefono,9)  FROM in_proveedor  pl WHERE pl.cedula = ruc_comprador AND pl.empresa = ce_comprobante.empresa  ) end ) as telefono
-  FROM ce_comprobante WHERE ce_id = ${id}`;
+    const query = this.comprobanteQuery(id);
 
     await this.db.withConnection(dbTenant, async (conn) => {
       const rows = await conn.query<Row>(query);
@@ -145,11 +142,32 @@ export class MailService {
             );
       }
 
-      await this.sendWhatsApp(emisor, row.telefono, pdfPath, base);
+      // WhatsApp nunca debe impedir el correo ya enviado ni el marcado del comprobante
+      try {
+        await this.sendWhatsApp(
+          emisor,
+          row.telefono,
+          pdfPath,
+          secuencial,
+          base,
+        );
+      } catch (err) {
+        this.logger.operation(emisor, 'whatsapp.comprobante', 'error', {
+          ...base,
+          err: err instanceof Error ? err : new Error(String(err)),
+        });
+      }
       await conn.query(
         `UPDATE ce_comprobante SET email = 1 WHERE ce_id = ${id}`,
       );
     });
+  }
+
+  private comprobanteQuery(id: string): string {
+    return `SELECT ce_xml,fecha_autorizacion, numero_autorizacion, xml_autorizado, web_clear_special(nombre_comprador) nombre_comprador,
+    empresa,
+    (case when ce_comprobante.tipo_comprobante='FV' OR ce_comprobante.tipo_comprobante='NC' OR ce_comprobante.tipo_comprobante='GR'  then  (SELECT first cl.telefono  FROM in_cliente  cl WHERE cl.cedula_ruc = ruc_comprador AND cl.empresa = ce_comprobante.empresa  ) else (SELECT first pl.telefono  FROM in_proveedor  pl WHERE pl.cedula = ruc_comprador AND pl.empresa = ce_comprobante.empresa  ) end ) as telefono
+  FROM ce_comprobante WHERE ce_id = ${id}`;
   }
 
   /** Marca un comprobante como ya notificado (lo usa la tarea programada). */
@@ -196,25 +214,119 @@ export class MailService {
     }
   }
 
+  /**
+   * Envia el PDF por WhatsApp. Devuelve el resultado (no lanza por fallos del servicio de WhatsApp);
+   * el flujo automatico lo ignora y el boton "solo WhatsApp" lo traduce a un error para el usuario.
+   */
   private async sendWhatsApp(
     emisor: Tenant,
     telefono: string | null | undefined,
     pdfPath: string,
+    secuencial: string,
     base: Record<string, unknown>,
-  ) {
+  ): Promise<
+    WhatsAppResult | { ok: false; reason: 'phone' | 'config'; message: string }
+  > {
     const phoneId = emisor.whatsapp?.phoneNumberId;
-    if (!phoneId) return;
-    const token = await this.whatsapp.generateToken(emisor, phoneId);
-    if (!telefono || !token) return;
+    if (!phoneId || !this.settings.for(emisor).whatsappBaseUrl)
+      return {
+        ok: false,
+        reason: 'config',
+        message: 'WhatsApp no esta configurado para esta empresa',
+      };
+    const phone = WhatsAppService.normalizePhone(telefono);
+    if (!phone) {
+      this.logger.operation(emisor, 'whatsapp.comprobante', 'omitido', {
+        ...base,
+        motivo: 'cliente sin celular valido',
+      });
+      return {
+        ok: false,
+        reason: 'phone',
+        message: 'El cliente no tiene un celular valido registrado',
+      };
+    }
     const pdf = await readFile(pdfPath);
-    const phone = telefono.startsWith('593')
-      ? telefono
-      : '593' + telefono.slice(1);
-    await this.whatsapp.send(emisor, token, {
+    const res = await this.whatsapp.deliver(emisor, phoneId, {
       phone,
       pdfBase64: pdf.toString('base64'),
+      fileName: `${secuencial}.pdf`,
     });
-    this.logger.operation(emisor, 'whatsapp.comprobante', 'ok', base);
+    this.logger.operation(
+      emisor,
+      'whatsapp.comprobante',
+      res.ok ? 'ok' : 'error',
+      {
+        ...base,
+        ...(res.ok ? {} : { motivo: res.message, reason: res.reason }),
+      },
+    );
+    return res;
+  }
+
+  /**
+   * Envia el comprobante SOLO por WhatsApp (sin correo y sin tocar ce_comprobante.email).
+   * `phoneOverride` permite indicar otro celular; si no, se usa el del cliente/proveedor.
+   * Errores: 404 comprobante, 422 sin celular valido, 424 WhatsApp no configurado/token/servicio.
+   */
+  async enviarWhatsApp(
+    dbTenant: Tenant,
+    ceId: string,
+    phoneOverride?: string,
+  ): Promise<void> {
+    const id = sqlInt(ceId, 'ce_id');
+    const rows = await this.db.query<Row>(dbTenant, this.comprobanteQuery(id));
+    const row = rows[0];
+    if (!row) throw new NotFoundException('Comprobante no encontrado');
+
+    const xml = await parseXml(row.ce_xml);
+    const root = Object.keys(xml)[0];
+    const tipo = tipoFromXml(xml);
+    const it = xml[root].infoTributaria[0];
+    const emisor = this.registry.selectByRuc(it.ruc[0]) ?? dbTenant;
+    this.tenantContext.bind(emisor);
+    const secuencial = `${it.estab[0]}-${it.ptoEmi[0]}-${it.secuencial[0]}`;
+    const base = {
+      ceId: id,
+      tipo,
+      comprobante: secuencial,
+      baseDatos: dbTenant.db.db,
+    };
+
+    let res;
+    try {
+      if (!tipo) throw new Error(`Tipo de comprobante no soportado: ${root}`);
+      const pdfPath = (
+        await this.ride.generate(tipo, row.ce_xml, row.fecha_autorizacion)
+      ).path;
+      res = await this.sendWhatsApp(
+        emisor,
+        phoneOverride || row.telefono,
+        pdfPath,
+        secuencial,
+        base,
+      );
+    } catch (err) {
+      this.logger.operation(emisor, 'whatsapp.comprobante', 'error', {
+        ...base,
+        err: err instanceof Error ? err : new Error(String(err)),
+      });
+      throw new HttpException(
+        'No se pudo preparar el envio por WhatsApp',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    if (res.ok) return;
+    // 4xx a proposito: el filtro global oculta el mensaje de los 5xx y aqui el usuario debe verlo
+    const status =
+      res.reason === 'phone'
+        ? HttpStatus.UNPROCESSABLE_ENTITY
+        : HttpStatus.FAILED_DEPENDENCY;
+    const message =
+      res.reason === 'token_expired'
+        ? 'El token de WhatsApp esta expirado o es invalido. Contacte al administrador.'
+        : res.message;
+    throw new HttpException(message, status);
   }
 
   /** Copia del transporte de la empresa; con OAuth2 agrega el accessToken (sin mutar la config). */

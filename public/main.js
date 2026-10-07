@@ -281,6 +281,27 @@ app.controller('main', ($scope, $http,  $window) =>
 			})
 	}	
 
+	// Envia el comprobante SOLO por WhatsApp (al celular registrado del cliente), sin correo.
+	$scope.sendWhatsApp = (idx) => {
+		const row = $scope.data[idx];
+		if (!row || !row.ce_id) {
+			Materialize.toast('Documento sin XML (ce_id vacío)', 2500, 'red');
+			return;
+		}
+		if (row.waSending) return;
+		row.waSending = true;
+		$http.get('api/whatsapp/' + row.origin + '/' + row.ce_id)
+			.success(() => {
+				row.waSending = false;
+				Materialize.toast('WhatsApp enviado', 2000, 'green');
+			})
+			.error((err, status) => {
+				row.waSending = false;
+				const msg = (err && err.message) || (status ? 'Error ' + status : 'Error de conexión');
+				Materialize.toast('No se envió por WhatsApp: ' + msg, 6000, 'red');
+			});
+	};
+
 	$scope.openMail = async (idx) => {
 		try {
 			$scope.datum.destinatarios = '';
