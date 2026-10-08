@@ -227,7 +227,7 @@ export class MailService {
   ): Promise<
     WhatsAppResult | { ok: false; reason: 'phone' | 'config'; message: string }
   > {
-    const phoneId = emisor.whatsapp?.phoneNumberId;
+    const phoneId = emisor.whatsapp?.phoneNumberId?.trim();
     if (!phoneId || !this.settings.for(emisor).whatsappBaseUrl)
       return {
         ok: false,

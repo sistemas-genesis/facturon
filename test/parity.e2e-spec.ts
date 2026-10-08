@@ -86,7 +86,7 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
           auth: { user: 'facturacion@pitanova.com', pass: SECRETO_MAIL },
         },
         mailsDefault: { manual: false, mail: 'copia@pitanova.com' },
-        whatsapp: { phoneNumberId: 'phone-1' },
+        whatsapp: { phoneNumberId: '3993ac2b-eb26-49c8-8c3c-7c157cff3767' },
         // bloque legado: debe ignorarse sin invalidar el tenant
         firma: { path: '', pass: '', add: 730, avisar_desde_dia: 10 },
         leyenda_catastro: { status: true, key: '.', size: 10, breakLine: '/' },
@@ -343,7 +343,11 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
       respond = (sql) => (sql.includes('SELECT') ? [rowFactura()] : []);
       const fetchMock = vi.fn(async (url: string, _init?: any) =>
         url.includes('/phones/token/')
-          ? { ok: true, json: async () => ({ token: 'tok-wa' }) }
+          ? {
+              ok: true,
+              status: 201,
+              text: async () => JSON.stringify({ token: 'tok-wa' }),
+            }
           : { ok: true, json: async () => ({}) },
       );
       vi.stubGlobal('fetch', fetchMock);
@@ -420,7 +424,11 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
         'fetch',
         vi.fn(async (url: string) =>
           url.includes('/phones/token/')
-            ? { ok: true, json: async () => ({ token: 'tok-wa' }) }
+            ? {
+                ok: true,
+                status: 201,
+                text: async () => JSON.stringify({ token: 'tok-wa' }),
+              }
             : { ok: true, status: 201, json: async () => ({}) },
         ),
       );
@@ -435,7 +443,11 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
         'fetch',
         vi.fn(async (url: string) =>
           url.includes('/phones/token/')
-            ? { ok: true, json: async () => ({ token: 'vencido' }) }
+            ? {
+                ok: true,
+                status: 201,
+                text: async () => JSON.stringify({ token: 'vencido' }),
+              }
             : {
                 ok: false,
                 status: 401,
@@ -540,11 +552,9 @@ describe('paridad funcional con genesis-facturon (e2e)', () => {
     });
 
     it('persona: consulta Genesis e inserta en cliente2 (200 vacio); Genesis caido -> 502', async () => {
-      const get = vi
-        .spyOn(axios, 'get')
-        .mockResolvedValue({
-          data: { cedula_ruc: '1234567890', nombre: "O'BRIEN" },
-        });
+      const get = vi.spyOn(axios, 'get').mockResolvedValue({
+        data: { cedula_ruc: '1234567890', nombre: "O'BRIEN" },
+      });
       await http().get('/api/persona/pita_nova/1234567890').expect(200, '');
       expect(get.mock.calls[0][0]).toBe(
         'http://genesis.example.com:2001/persona/1234567890',

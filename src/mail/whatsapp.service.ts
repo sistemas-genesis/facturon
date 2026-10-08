@@ -17,31 +17,105 @@ export class WhatsAppService {
     private readonly logger: TenantLoggerService,
   ) {}
 
-  /** POST {baseUrl}/phones/token/{phoneNumberId}; null si falla (no interrumpe el envio de correo). */
+  /** Como requestToken pero devuelve solo el token (null si falla; el motivo queda en el log). */
   async generateToken(
     tenant: Tenant,
     phoneNumberId: string,
   ): Promise<string | null> {
-    const baseUrl = this.settings.for(tenant).whatsappBaseUrl;
-    if (!baseUrl) return null; // WhatsApp deshabilitado para esta empresa
-    try {
-      const res = await fetch(
-        `${baseUrl}/phones/token/${encodeURIComponent(phoneNumberId)}`,
-        { method: 'POST' },
-      );
-      if (!res.ok) {
-        this.logger.operation(tenant, 'whatsapp.token', 'error', {
-          status: res.status,
-        });
-        return null;
-      }
-      const body = (await res.json()) as { token?: string };
-      return body.token ?? null;
-    } catch (err) {
+    const r = await this.requestToken(tenant, phoneNumberId);
+    return r.ok ? r.token : null;
+  }
+
+  /**
+   * POST {baseUrl}/phones/token/{phoneNumberId}. Distingue la causa del fallo y la registra (con el
+   * phoneNumberId enmascarado y el baseUrl, nunca el token). El servidor responde 201 con body `false`
+   * (no 404) cuando el phoneNumberId no existe, por eso se lee como texto y se parsea con tolerancia.
+   */
+  async requestToken(
+    tenant: Tenant,
+    phoneNumberId: string,
+  ): Promise<TokenResult> {
+    const rawBase = this.settings.for(tenant).whatsappBaseUrl;
+    if (!rawBase)
+      return fail('disabled', 'WhatsApp no esta habilitado para esta empresa');
+    const baseUrl = rawBase.trim().replace(/\/+$/, '');
+    const id = String(phoneNumberId ?? '').trim();
+    const masked = maskId(id);
+    const ctx = `phoneNumberId ${masked}, servidor ${safeOrigin(baseUrl)}`;
+    const report = (r: Extract<TokenResult, { ok: false }>, extra = {}) => {
       this.logger.operation(tenant, 'whatsapp.token', 'error', {
-        err: err instanceof Error ? err : new Error(String(err)),
+        reason: r.reason,
+        phoneNumberId: masked,
+        baseUrl: safeOrigin(baseUrl),
+        motivo: r.message,
+        ...extra,
       });
-      return null;
+      return r;
+    };
+    if (!UUID_RE.test(id))
+      return report(
+        fail(
+          'phone_id_invalid',
+          `El phoneNumberId configurado no es valido (${ctx}, ${id.length} caracteres; se esperaba un UUID de 36). Revise la configuracion de la empresa`,
+        ),
+      );
+    try {
+      const res = await fetch(`${baseUrl}/phones/token/${id}`, {
+        method: 'POST',
+      });
+      const text = await res.text();
+      if (res.status === 401 || res.status === 403)
+        return report(
+          fail(
+            'token',
+            `El servicio de WhatsApp rechazo la solicitud de token (${res.status}; ${ctx})`,
+            res.status,
+          ),
+          { status: res.status },
+        );
+      if (res.status === 404 || (res.ok && text.trim() === 'false'))
+        return report(
+          fail(
+            'phone_not_found',
+            `El phoneNumberId no existe en el servidor de WhatsApp (${ctx}). Verifique que este completo y sin espacios`,
+            res.status,
+          ),
+          { status: res.status },
+        );
+      if (!res.ok)
+        return report(
+          fail(
+            'unavailable',
+            `El servicio de WhatsApp respondio ${res.status} al pedir el token (${ctx})`,
+            res.status,
+          ),
+          { status: res.status },
+        );
+      let token: unknown;
+      try {
+        const body = JSON.parse(text) as Record<string, unknown> | null;
+        token = body?.token ?? body?.access_token;
+      } catch {
+        token = undefined;
+      }
+      if (typeof token !== 'string' || !token.trim())
+        return report(
+          fail(
+            'token',
+            `Respuesta inesperada del servicio de WhatsApp al pedir el token (${ctx})`,
+            res.status,
+          ),
+          { status: res.status, bodyLength: text.length },
+        );
+      return { ok: true, token: token.trim() };
+    } catch (err) {
+      return report(
+        fail(
+          'unavailable',
+          `No se pudo conectar con el servicio de WhatsApp (${ctx})`,
+        ),
+        { err: err instanceof Error ? err : new Error(String(err)) },
+      );
     }
   }
 
@@ -84,9 +158,9 @@ export class WhatsAppService {
       'No se pudo obtener el token de WhatsApp',
     );
     for (let intento = 0; intento < 2; intento++) {
-      const token = await this.generateToken(tenant, phoneNumberId);
-      if (!token) return last;
-      last = await this.post(tenant, token, options);
+      const t = await this.requestToken(tenant, phoneNumberId);
+      if (!t.ok) return t;
+      last = await this.post(tenant, t.token, options);
       if (last.ok || last.reason !== 'token_expired') return last;
     }
     return last;
@@ -177,15 +251,45 @@ export type WhatsAppResult =
   | { ok: true }
   | {
       ok: false;
-      reason: 'disabled' | 'token' | 'token_expired' | 'http' | 'network';
+      reason:
+        | 'disabled'
+        | 'token'
+        | 'token_expired'
+        | 'http'
+        | 'network'
+        | 'phone_id_invalid'
+        | 'phone_not_found'
+        | 'unavailable';
       message: string;
       status?: number;
     };
+
+type TokenResult =
+  { ok: true; token: string } | Extract<WhatsAppResult, { ok: false }>;
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Enmascara el id: primeros 4 y ultimos 4 caracteres (el id no es secreto, pero evita exponerlo completo). */
+function maskId(id: string): string {
+  return id.length <= 8
+    ? `${id.slice(0, 2)}***`
+    : `${id.slice(0, 4)}...${id.slice(-4)}`;
+}
+
+/** Solo protocolo+host+puerto (descarta credenciales/ruta). */
+function safeOrigin(url: string): string {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return '(baseUrl invalido)';
+  }
+}
 
 function fail(
   reason: Extract<WhatsAppResult, { ok: false }>['reason'],
   message: string,
   status?: number,
-): WhatsAppResult {
+): Extract<WhatsAppResult, { ok: false }> {
   return { ok: false, reason, message, status };
 }
