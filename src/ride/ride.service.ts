@@ -191,11 +191,14 @@ export class RideService implements OnModuleInit {
     if (cfg?.status && typeof comprobante.infoAdicional !== 'undefined') {
       const campos: any[] = comprobante.infoAdicional[0].campoAdicional;
       const idx = campos.findIndex((c) => c['$']?.nombre == cfg.key);
-      if (idx >= 0)
+      if (idx >= 0) {
+        // ya se muestra en el recuadro superior: no repetirlo en "Información Adicional"
+        campos[idx].ocultoLeyenda = true;
         leyenda = {
           size: cfg.size,
           text: campos[idx]['_'].replace(cfg.breakLine, '<br>'),
         };
+      }
     }
     const size = cfg?.size ?? 0;
     if (typeof it.agenteRetencion !== 'undefined')

@@ -250,13 +250,6 @@ function buildEmpresaAutorizacionOldStyle(opts) {
                     ],
                     margin: [0, 0, 0, 3]
                   },
-                  {
-                    columns: [
-                      { width: 70, text: 'Suc. (' + text(opts.estab) + ')', bold: true },
-                      { width: '*', text: text(opts.sucDir) }
-                    ],
-                    margin: [0, 0, 0, 3]
-                  },
                   { text: 'Contribuyente Especial: ' + text(opts.contribuyenteEspecial), margin: [0, 0, 0, 3] },
                   { text: 'Obligado a llevar contabilidad: ' + text(opts.obligadoContabilidad), margin: [0, 0, 0, 3] },
                   { text: leyenda, fontSize: 7, margin: [0, 0, 0, 0] }
@@ -371,7 +364,7 @@ function infoAdicionalStack(node, extras = []) {
   const campos = node.infoAdicional && node.infoAdicional[0] && node.infoAdicional[0].campoAdicional
     ? node.infoAdicional[0].campoAdicional
     : [];
-  campos.concat(extras).forEach((i) => {
+  campos.concat(extras).filter((i) => !i.ocultoLeyenda).forEach((i) => {
     const nombre = i['$'] ? i['$'].nombre : '';
     items.push({
       text: [{ text: '-' + text(nombre) + ': ', color: COLOR_AZUL }, { text: text(i['_']) }],
