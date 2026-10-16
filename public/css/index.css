@@ -204,3 +204,12 @@ tfoot > tr > td{
 -moz-border-radius: 0;
 border-radius: 0;
 }
+.empresa-picker{ position: relative; }
+.empresa-chips{ max-height: 6.5em; overflow-y: auto; }
+.empresa-dropdown{ position: absolute; left: 0; right: 0; top: 3.2em; z-index: 20; background: #fff; max-height: 18em; overflow-y: auto; }
+.empresa-dropdown ul{ margin: 0; }
+.empresa-dropdown li{ padding: .4em 1em; cursor: pointer; }
+.empresa-dropdown li:hover{ background: #e3f2fd; }
+.empresa-dropdown li label{ pointer-events: none; color: #333; }
+.empresa-actions{ position: sticky; top: 0; background: #fafafa; padding: .5em 1em; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; font-size: .85em; }
+.empresa-empty{ color: #999; }

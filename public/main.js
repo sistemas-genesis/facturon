@@ -76,7 +76,6 @@ app.controller('main', ($scope, $http,  $window) =>
 		$scope.datum.isPublic = false;
 		res.forEach(i=>{
 			publicip = i.publicip;
-			$scope.datum.empresa.push(i)
 		})
 
 
@@ -95,6 +94,26 @@ app.controller('main', ($scope, $http,  $window) =>
 	})
 	.error(() => {
 		Materialize.toast('Error de conexión', 1000, 'red')
+	})
+
+	$scope.empresaFilter = '';
+	$scope.empresaOpen = false;
+
+	$scope.filteredEmpresas = () => {
+		var q = ($scope.empresaFilter || '').toLowerCase().trim();
+		return ($scope.empresas || []).filter(i => !q || (i.empresa || '').toLowerCase().indexOf(q) >= 0 || (i.ruc || '').indexOf(q) >= 0);
+	}
+	$scope.isSelected = e => $scope.datum.empresa.some(i => i.slug == e.slug);
+	$scope.toggleEmpresa = e => {
+		var idx = $scope.datum.empresa.findIndex(i => i.slug == e.slug);
+		if (idx >= 0) $scope.datum.empresa.splice(idx, 1);
+		else $scope.datum.empresa.push(e);
+	}
+	$scope.selectFiltered = () => {
+		$scope.filteredEmpresas().forEach(e => { if (!$scope.isSelected(e)) $scope.datum.empresa.push(e); });
+	}
+	document.addEventListener('click', ev => {
+		if (!ev.target.closest('.empresa-picker')) $scope.$apply(() => { $scope.empresaOpen = false; });
 	})
 
 	$scope.$watch('datum.all', (n,o) => {
@@ -147,6 +166,11 @@ app.controller('main', ($scope, $http,  $window) =>
 		if (!$scope.datum.all && $scope.datum.cedula_ruc == ''){
 			Materialize.toast('Escriba una cédula válida por favor', 3000, 'orange')
 			document.getElementById('identificacion').focus()
+			return;
+		}
+		if ($scope.datum.empresa.length == 0){
+			Materialize.toast('Seleccione al menos una empresa', 3000, 'orange')
+			$scope.empresaOpen = true;
 			return;
 		}
 		var estacion= ','

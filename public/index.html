@@ -64,9 +64,26 @@
           <input id="end" type="date" ng-model="datum.end" required>
           <label for="end" class="active">Hasta</label>
         </div>
-		<div class="input-field col s12 m4">
-			<select id="empresa" ng-model="datum.empresa" ng-options="i.empresa for i in empresas track by i.slug" multiple required> </select>
-			<label for="empresa" class="active select-label">Empresa</label>
+		<div class="input-field col s12 m4 empresa-picker">
+			<input id="empresa" type="text" ng-model="empresaFilter" ng-focus="empresaOpen = true" placeholder="Buscar empresa..." autocomplete="off">
+			<label for="empresa" class="active">Empresa ({{datum.empresa.length}}/{{empresas.length}})</label>
+			<div class="empresa-chips">
+				<span class="chip" ng-repeat="e in datum.empresa">{{e.empresa}}<i class="material-icons close" ng-click="toggleEmpresa(e)">close</i></span>
+			</div>
+			<div class="empresa-dropdown z-depth-2" ng-show="empresaOpen">
+				<div class="empresa-actions">
+					<a href="" ng-click="selectFiltered()">Seleccionar visibles ({{filteredEmpresas().length}})</a>
+					<a href="" ng-click="datum.empresa = []">Limpiar</a>
+					<a href="" ng-click="empresaOpen = false">Cerrar</a>
+				</div>
+				<ul>
+					<li ng-repeat="e in filteredEmpresas()" ng-click="toggleEmpresa(e)">
+						<input type="checkbox" class="filled-in" ng-checked="isSelected(e)" readonly>
+						<label>{{e.empresa}}</label>
+					</li>
+					<li ng-if="filteredEmpresas().length == 0" class="empresa-empty">Sin resultados</li>
+				</ul>
+			</div>
 		</div>
 		<div class="input-field col s6 m4">
 			<p >
