@@ -1,0 +1,12 @@
+import { z } from 'zod';
+export declare const APP_JSON: unique symbol;
+export declare const rideSchema: any;
+export type RideConfig = z.infer<typeof rideSchema>;
+export declare const mailTaskSchema: any;
+export type MailTaskConfig = z.infer<typeof mailTaskSchema>;
+export declare const tablesSchema: any;
+export type TablesConfig = z.infer<typeof tablesSchema>;
+export declare const appJsonSchema: any;
+export type AppJson = z.infer<typeof appJsonSchema>;
+export declare const DEFAULT_APP_CONFIG_FILE = "./config/app.config.json";
+export declare function loadAppJson(file: string): AppJson;

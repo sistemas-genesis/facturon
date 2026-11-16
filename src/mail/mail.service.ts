@@ -251,6 +251,7 @@ export class MailService {
       phone,
       pdfBase64: pdf.toString('base64'),
       fileName: `${secuencial}.pdf`,
+      text: emisor.whatsapp?.message?.trim() || undefined,
     });
     this.logger.operation(
       emisor,

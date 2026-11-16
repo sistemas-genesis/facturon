@@ -91,7 +91,7 @@ Si una variable o un campo del JSON es inválido, el proceso no arranca y dice c
 | `ride` | — | `optionsRIDE`, `RIDE` (rótulos y columnas) y `mailTemplate` |
 | `leyenda_catastro` | — | `{ "status", "key", "size", "breakLine" }` |
 | `subsidio` | — | `{ "status", "label": {...} }` |
-| `whatsapp` | — | `{ "phoneNumberId": "...", "baseUrl": "..." }` (`baseUrl` opcional, si no usa `defaults`) |
+| `whatsapp` | — | `{ "phoneNumberId": "...", "baseUrl": "...", "message": "..." }` (`baseUrl` opcional, si no usa `defaults`; `message` opcional: texto que acompaña al PDF, si falta se usa el mensaje por defecto) |
 | `soap`, `genesisIp`, `facturonURL`, `tables` | `defaults` | Sobrescriben el valor global solo para esta empresa |
 
 > Estos bloques ya los consumen los módulos: `mail`/`mailsDefault`/`whatsapp` (correo y WhatsApp), `logo`/`ride`/`subsidio`/`leyenda_catastro` (RIDE) y `mailTask` (envío automático). Lo que la empresa define (`ride`, `mailTask`, `tables`, `soap`, `genesisIp`, `facturonURL`, `whatsapp.baseUrl`) reemplaza al `defaults` de `app.config.json` solo para ella; si no lo define, hereda el global. Esa mezcla se hace en un único lugar (`TenantSettings`).
@@ -156,7 +156,11 @@ Es el mismo de `config/tenants/example.json.sample` y de la sección "Ejemplo de
       "ahorro_subsidio": "Ahorro por Subsidio"
     }
   },
-  "whatsapp": { "phoneNumberId": "00000000-0000-0000-0000-000000000000", "baseUrl": "http://whatsapp.example.com:5822" }
+  "whatsapp": {
+    "phoneNumberId": "00000000-0000-0000-0000-000000000000",
+    "baseUrl": "http://whatsapp.example.com:5822",
+    "message": "Hola, te compartimos tu factura en el siguiente PDF. ¡Gracias por tu confianza!"
+  }
 }
 ```
 

@@ -79,6 +79,7 @@
   },
   "whatsapp": {
     "phoneNumberId": "00000000-0000-0000-0000-000000000000",
-    "baseUrl": "http://whatsapp.example.com:5822"
+    "baseUrl": "http://whatsapp.example.com:5822",
+    "message": "Hola, te compartimos tu factura en el siguiente PDF. ¡Gracias por tu confianza!"
   }
 }

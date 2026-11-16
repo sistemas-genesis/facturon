@@ -83,7 +83,12 @@ export const tenantSchema = z
       })
       .optional(),
     whatsapp: z
-      .object({ phoneNumberId: z.string(), baseUrl: z.string().url() })
+      .object({
+        phoneNumberId: z.string(),
+        baseUrl: z.string().url(),
+        /** Texto que acompaña al PDF; si falta se usa el mensaje por defecto. */
+        message: z.string().min(1),
+      })
       .partial()
       .optional(),
     /** Sobrescrituras opcionales de los `defaults` globales. */
